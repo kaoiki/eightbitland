@@ -1,0 +1,291 @@
+export const metadata = {
+  id: 'click-rush',
+  name: 'Click Rush',
+  version: '0.1.0',
+  author: 'platform',
+  description: 'Tap as fast as you can before time runs out.',
+  inputType: ['pointer', 'touch'],
+  orientation: 'portrait',
+  status: 'active'
+}
+
+export function createGame(options) {
+  const {
+    mountEl,
+    onReady,
+    onScoreChange,
+    onGameOver,
+    onStateChange
+  } = options
+
+  let state = 'idle'
+  let animationId = null
+  let root = null
+  let overlayEl = null
+  let targetEl = null
+  let timerEl = null
+
+  let score = 0
+  let bestScore = 0
+  let timeLeft = 10
+  let lastTimestamp = 0
+  let gameStartedAt = 0
+
+  function setState(nextState) {
+    state = nextState
+    onStateChange?.(state)
+    updateOverlay()
+  }
+
+  function getBestScore() {
+    try {
+      return Number(localStorage.getItem('click_rush_best_score') || 0)
+    } catch {
+      return 0
+    }
+  }
+
+  function setBestScore(value) {
+    bestScore = value
+    try {
+      localStorage.setItem('click_rush_best_score', String(value))
+    } catch {}
+  }
+
+  function emitScore(delta = 0, forceEmit = false) {
+    if (delta !== 0) {
+      score += delta
+      if (score > bestScore) {
+        setBestScore(score)
+      }
+    }
+
+    if (forceEmit || delta !== 0) {
+      onScoreChange?.({
+        score,
+        bestScore,
+        delta
+      })
+    }
+
+    if (timerEl) {
+      timerEl.textContent = `TIME ${Math.ceil(timeLeft)}`
+    }
+  }
+
+  function updateOverlay() {
+    if (!overlayEl) return
+
+    if (state === 'idle' || state === 'ready') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-green-400">CLICK RUSH</div>
+          <div class="mt-2 text-xs text-green-500/80">Tap / Click the target</div>
+          <div class="mt-1 text-xs text-green-500/80">You have 10 seconds</div>
+          <div class="mt-3 text-xs text-green-400">Press Start</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    if (state === 'paused') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-yellow-400">PAUSED</div>
+          <div class="mt-2 text-xs text-green-500/80">Press Start to continue</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    if (state === 'gameover') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-red-400">TIME UP</div>
+          <div class="mt-2 text-xs text-green-400">Tap Reset to retry</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    overlayEl.style.display = 'none'
+  }
+
+  function randomRange(min, max) {
+    return Math.random() * (max - min) + min
+  }
+
+  function moveTarget() {
+    if (!targetEl || !mountEl) return
+
+    const width = mountEl.clientWidth || 320
+    const height = mountEl.clientHeight || 400
+    const size = 56
+
+    const x = randomRange(16, Math.max(16, width - size - 16))
+    const y = randomRange(50, Math.max(50, height - size - 16))
+
+    targetEl.style.width = `${size}px`
+    targetEl.style.height = `${size}px`
+    targetEl.style.transform = `translate(${x}px, ${y}px)`
+  }
+
+  function buildDOM() {
+    mountEl.innerHTML = ''
+
+    root = document.createElement('div')
+    root.className = 'relative w-full h-full overflow-hidden bg-black select-none'
+
+    timerEl = document.createElement('div')
+    timerEl.className =
+      'absolute right-3 top-3 z-10 text-[11px] tracking-widest text-green-400'
+
+    targetEl = document.createElement('button')
+    targetEl.type = 'button'
+    targetEl.className =
+      'absolute rounded-full border-2 border-pink-400 bg-pink-500/20 shadow-[0_0_18px_rgba(244,114,182,0.45)] active:scale-95'
+
+    overlayEl = document.createElement('div')
+    overlayEl.className =
+      'absolute inset-0 z-20 flex items-center justify-center bg-black/45'
+
+    root.appendChild(timerEl)
+    root.appendChild(targetEl)
+    root.appendChild(overlayEl)
+    mountEl.appendChild(root)
+  }
+
+  function handleTargetClick() {
+    if (state !== 'playing') return
+    emitScore(1)
+    moveTarget()
+  }
+
+  function loop(timestamp) {
+    if (state !== 'playing') return
+
+    if (!lastTimestamp) lastTimestamp = timestamp
+    const delta = (timestamp - lastTimestamp) / 1000
+    lastTimestamp = timestamp
+
+    timeLeft -= delta
+
+    if (timerEl) {
+      timerEl.textContent = `TIME ${Math.max(0, Math.ceil(timeLeft))}`
+    }
+
+    if (timeLeft <= 0) {
+      gameOver('time-up')
+      return
+    }
+
+    animationId = requestAnimationFrame(loop)
+  }
+
+  function start() {
+    if (state === 'playing') return
+
+    if (state === 'paused') {
+      setState('playing')
+      lastTimestamp = 0
+      animationId = requestAnimationFrame(loop)
+      return
+    }
+
+    if (state === 'gameover') {
+      resetToReady()
+      return
+    }
+
+    if (state === 'idle' || state === 'ready') {
+      setState('playing')
+      gameStartedAt = performance.now()
+      lastTimestamp = 0
+      animationId = requestAnimationFrame(loop)
+    }
+  }
+
+  function stop() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+
+    if (state === 'playing') {
+      setState('paused')
+    }
+  }
+
+  function resetToReady() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    score = 0
+    timeLeft = 10
+    bestScore = getBestScore()
+    emitScore(0, true)
+    moveTarget()
+    setState('idle')
+  }
+
+  function reset() {
+    if (state !== 'gameover') return
+
+    cancelAnimationFrame(animationId)
+    animationId = null
+    score = 0
+    timeLeft = 10
+    bestScore = getBestScore()
+    emitScore(0, true)
+    moveTarget()
+    setState('playing')
+    gameStartedAt = performance.now()
+    lastTimestamp = 0
+    animationId = requestAnimationFrame(loop)
+  }
+
+  function gameOver(reason = 'unknown') {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    setState('gameover')
+
+    onGameOver?.({
+      score,
+      bestScore,
+      duration: Math.round((performance.now() - gameStartedAt) / 100) / 10,
+      reason
+    })
+  }
+
+  function destroy() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    targetEl?.removeEventListener('click', handleTargetClick)
+    mountEl.innerHTML = ''
+    setState('destroyed')
+  }
+
+  function getState() {
+    return {
+      state,
+      score,
+      bestScore
+    }
+  }
+
+  buildDOM()
+  bestScore = getBestScore()
+  emitScore(0, true)
+  moveTarget()
+  targetEl.addEventListener('click', handleTargetClick)
+  setState('idle')
+  onReady?.()
+
+  return {
+    start,
+    stop,
+    reset,
+    destroy,
+    getState
+  }
+}
