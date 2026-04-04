@@ -26,7 +26,7 @@
   </GameLayout>
 </template>
 
-<script setup>
+<script setup> //再次尝试编译
 import { computed, onMounted, ref } from 'vue'
 import GameLayout from '../components/game/GameLayout.vue'
 import GameCanvas from '../components/game/GameCanvas.vue'
