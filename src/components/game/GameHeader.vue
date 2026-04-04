@@ -23,10 +23,22 @@
           class="flex min-w-[260px] items-center justify-between gap-3 border border-green-400 px-4 py-2 text-green-300 transition-all duration-150 hover:bg-green-400/10 hover:text-green-200 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-inherit"
           :disabled="gameCount <= 1"
         >
-          <span class="flex items-center gap-2">
-            <UIcon name="i-mdi-controller" class="h-5 w-5 text-green-400" />
-            <span class="text-xl font-bold tracking-widest">
-              {{ gameMeta?.name || 'Retro Arcade' }}
+          <span class="flex min-w-0 items-center gap-2">
+            <UIcon name="i-mdi-controller" class="h-5 w-5 shrink-0 text-green-400" />
+
+            <span class="flex min-w-0 items-center gap-2">
+              <span class="truncate text-xl font-bold tracking-widest">
+                {{ gameMeta?.name || 'Retro Arcade' }}
+              </span>
+
+              <span
+                v-if="gameMeta?.source"
+                class="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium tracking-wide ring-1"
+                :class="sourceBadgeClass"
+              >
+                <UIcon :name="sourceIcon" class="h-3 w-3" />
+                <span>{{ sourceLabel }}</span>
+              </span>
             </span>
           </span>
 
@@ -75,14 +87,41 @@ const props = defineProps({
 
 const emit = defineEmits(['switch-game'])
 
-const dropdownItems = computed(() =>
-  props.gameOptions.map((game) => ({
-    label: game.label,
-    disabled: game.id === props.currentGameId,
-    onSelect: () => {
-      console.log('[GameHeader] select game =', game.id)
-      emit('switch-game', game.id)
+function getSourceMeta(source) {
+  if (source === 'external') {
+    return {
+      label: 'External',
+      icon: 'i-mdi-puzzle-outline',
+      badgeClass: 'bg-cyan-500/15 text-cyan-300 ring-cyan-400/30'
     }
-  }))
+  }
+
+  return {
+    label: 'Platform',
+    icon: 'i-mdi-controller-classic',
+    badgeClass: 'bg-lime-500/15 text-lime-300 ring-lime-400/30'
+  }
+}
+
+const sourceMeta = computed(() => getSourceMeta(props.gameMeta?.source))
+const sourceLabel = computed(() => sourceMeta.value.label)
+const sourceIcon = computed(() => sourceMeta.value.icon)
+const sourceBadgeClass = computed(() => sourceMeta.value.badgeClass)
+
+const dropdownItems = computed(() =>
+  props.gameOptions.map((game) => {
+    const meta = getSourceMeta(game.source)
+
+    return {
+      label: `${meta.label} · ${game.label}`,
+      icon: meta.icon,
+      disabled: game.id === props.currentGameId,
+      onSelect: () => {
+        if (game.id === props.currentGameId) return
+        console.log('[GameHeader] select game =', game.id)
+        emit('switch-game', game.id)
+      }
+    }
+  })
 )
 </script>

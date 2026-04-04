@@ -6,6 +6,7 @@ export const metadata = {
   description: 'Find and tap the odd tile before time runs out.',
   inputType: ['pointer', 'touch'],
   orientation: 'portrait',
+  source: 'external',
   status: 'active'
 }
 

@@ -6,6 +6,7 @@ export const metadata = {
   description: 'Dodge falling blocks and survive as long as possible.',
   inputType: ['keyboard', 'pointer', 'touch'],
   orientation: 'portrait',
+  source: 'platform',
   status: 'active'
 }
 export function createGame(options) {
