@@ -6,6 +6,7 @@ export const metadata = {
   description: 'Tap as fast as you can before time runs out.',
   inputType: ['pointer', 'touch'],
   orientation: 'portrait',
+  source: 'platform',
   status: 'active'
 }
 

@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/games/testGame.js",
+    "enabled": true
+  },
+  {
+    "path": "/games/numberOrder.js",
+    "enabled": true
+  },
+  {
+    "path": "/games/dotDodge.js",
+    "enabled": true
+  }
+]

@@ -26,7 +26,7 @@
   </GameLayout>
 </template>
 
-<script setup> //再次尝试编译
+<script setup>
 import { computed, onMounted, ref } from 'vue'
 import GameLayout from '../components/game/GameLayout.vue'
 import GameCanvas from '../components/game/GameCanvas.vue'
@@ -43,7 +43,10 @@ const gameOptions = computed(() =>
     .filter((id) => gameRegistry[id] && gameRegistry[id].metadata)
     .map((id) => ({
       id,
-      label: gameRegistry[id].metadata.name
+      label: gameRegistry[id].metadata.name,
+      source: gameRegistry[id].metadata.source || 'platform',
+      icon: gameRegistry[id].metadata.source === 'external' ? '🧩' : '🎮',
+      badge: gameRegistry[id].metadata.source === 'external' ? 'External' : 'Platform'
     }))
 )
 
@@ -96,15 +99,57 @@ function switchGame(gameId) {
 }
 
 onMounted(async () => {
-  const externalGame = await loadExternalGame('/games/testGame.js')
+  try {
+    // 1) 先统一处理内置游戏
+    for (const id of Object.keys(gameRegistry)) {
+      const game = gameRegistry[id]
 
-  if (!externalGame || !externalGame.metadata?.id) return
+      if (!game?.metadata) continue
 
-  const gameId = externalGame.metadata.id
+      gameRegistry[id] = {
+        ...game,
+        metadata: {
+          ...game.metadata,
+          source: game.metadata?.source || 'platform'
+        }
+      }
+    }
 
-  if (gameRegistry[gameId]) return
+    // 2) 再加载外部游戏
+    const response = await fetch('/games/games.json', {
+      cache: 'no-store'
+    })
 
-  gameRegistry[gameId] = externalGame
-  availableGameIds.value = Object.keys(gameRegistry)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch games.json: ${response.status}`)
+    }
+
+    const gameList = await response.json()
+
+    for (const item of gameList) {
+      if (!item?.path) continue
+      if (item.enabled === false) continue
+
+      const externalGame = await loadExternalGame(item.path)
+
+      if (!externalGame || !externalGame.metadata?.id) continue
+
+      const gameId = externalGame.metadata.id
+
+      if (gameRegistry[gameId]) continue
+
+      gameRegistry[gameId] = {
+        ...externalGame,
+        metadata: {
+          ...externalGame.metadata,
+          source: externalGame.metadata?.source || 'external'
+        }
+      }
+    }
+
+    availableGameIds.value = Object.keys(gameRegistry)
+  } catch (error) {
+    console.error('[ExternalGame] failed to load games.json:', error)
+  }
 })
 </script>
