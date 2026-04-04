@@ -3,7 +3,7 @@
     :score="score"
     :best="best"
     :game-state="gameState"
-    :game-meta="currentGame.metadata || {}"
+    :game-meta="currentGame?.metadata || {}"
     :game-count="availableGameIds.length"
     :game-options="gameOptions"
     :current-game-id="currentGameId"
@@ -13,6 +13,7 @@
   >
     <template #game>
       <GameCanvas
+        v-if="currentGame"
         :key="currentGameId"
         :game-module="currentGame"
         @ready="handleReady"
@@ -25,7 +26,7 @@
   </GameLayout>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { computed, onMounted, ref } from 'vue'
 import GameLayout from '../components/game/GameLayout.vue'
 import GameCanvas from '../components/game/GameCanvas.vue'
@@ -33,23 +34,25 @@ import { gameRegistry } from '../games/runtime/gameRegistry'
 import { loadExternalGame } from '../games/runtime/loadExternalGame'
 
 const currentGameId = ref('retro-dodge')
-const currentGame = computed(() => gameRegistry[currentGameId.value])
+const currentGame = computed(() => gameRegistry[currentGameId.value] || null)
 
 const availableGameIds = ref(Object.keys(gameRegistry))
 
 const gameOptions = computed(() =>
-  availableGameIds.value.map((id) => ({
-    id,
-    label: gameRegistry[id].metadata.name
-  }))
+  availableGameIds.value
+    .filter((id) => gameRegistry[id] && gameRegistry[id].metadata)
+    .map((id) => ({
+      id,
+      label: gameRegistry[id].metadata.name
+    }))
 )
 
 const score = ref(0)
 const best = ref(0)
 const gameState = ref('idle')
-const gameInstance = ref<any>(null)
+const gameInstance = ref(null)
 
-function handleRegisterGame(game: any) {
+function handleRegisterGame(game) {
   gameInstance.value = game
 }
 
@@ -57,17 +60,17 @@ function handleReady() {
   gameState.value = 'ready'
 }
 
-function handleScoreChange(payload: { score: number; bestScore: number }) {
+function handleScoreChange(payload) {
   score.value = payload.score
   best.value = payload.bestScore
 }
 
-function handleGameOver(payload: { score: number; bestScore: number }) {
+function handleGameOver(payload) {
   score.value = payload.score
   best.value = payload.bestScore
 }
 
-function handleStateChange(state: string) {
+function handleStateChange(state) {
   gameState.value = state
 }
 
@@ -79,7 +82,7 @@ function handleReset() {
   gameInstance.value?.reset?.()
 }
 
-function switchGame(gameId: string) {
+function switchGame(gameId) {
   if (!gameRegistry[gameId]) return
 
   gameInstance.value?.destroy?.()
@@ -95,13 +98,13 @@ function switchGame(gameId: string) {
 onMounted(async () => {
   const externalGame = await loadExternalGame('/games/testGame.js')
 
-  if (!externalGame) return
+  if (!externalGame || !externalGame.metadata?.id) return
 
   const gameId = externalGame.metadata.id
 
   if (gameRegistry[gameId]) return
 
   gameRegistry[gameId] = externalGame
-  availableGameIds.value.push(gameId)
+  availableGameIds.value = Object.keys(gameRegistry)
 })
 </script>
