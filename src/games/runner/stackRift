@@ -1,3 +1,5 @@
+//new game
+
 export const metadata = {
   id: 'stack-rift',
   name: 'Stack Rift',
