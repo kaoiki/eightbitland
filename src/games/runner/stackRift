@@ -1,0 +1,799 @@
+export const metadata = {
+  id: 'stack-rift',
+  name: 'Stack Rift',
+  version: '0.1.0',
+  author: 'platform',
+  description: 'An endless glitch-stack arcade game. Survive, clear, and outlast the rising chaos.',
+  inputType: ['keyboard', 'pointer', 'touch'],
+  orientation: 'portrait',
+  source: 'platform',
+  status: 'active'
+}
+
+export function createGame(options) {
+  const {
+    mountEl,
+    onReady,
+    onScoreChange,
+    onGameOver,
+    onStateChange
+  } = options
+
+  const COLS = 10
+  const ROWS = 18
+  const BASE_CELL = 24
+  const BEST_SCORE_KEY = 'stack_rift_best_score'
+
+  let state = 'idle'
+  let animationId = null
+  let lastTimestamp = 0
+  let accumulatedDrop = 0
+  let gameStartedAt = 0
+  let root = null
+  let canvas = null
+  let ctx = null
+  let overlayEl = null
+  let hudTopEl = null
+  let hudBottomEl = null
+  let touchLeftEl = null
+  let touchRightEl = null
+  let touchRotateEl = null
+  let touchDropEl = null
+
+  let score = 0
+  let bestScore = 0
+  let lines = 0
+  let level = 1
+  let elapsedSeconds = 0
+  let lastRiftAt = 0
+
+  let board = []
+  let currentPiece = null
+  let currentX = 0
+  let currentY = 0
+  let softDropping = false
+
+  const colors = {
+    A: '#67e8f9',
+    B: '#c084fc',
+    C: '#f472b6',
+    D: '#facc15',
+    E: '#4ade80',
+    F: '#fb923c',
+    G: '#60a5fa',
+    X: '#ef4444'
+  }
+
+  const pieceSet = [
+    {
+      key: 'A',
+      rotations: [
+        [[1, 1, 1], [0, 1, 0]],
+        [[0, 1], [1, 1], [0, 1]],
+        [[0, 1, 0], [1, 1, 1]],
+        [[1, 0], [1, 1], [1, 0]]
+      ]
+    },
+    {
+      key: 'B',
+      rotations: [
+        [[1, 1, 0], [0, 1, 1]],
+        [[0, 1], [1, 1], [1, 0]]
+      ]
+    },
+    {
+      key: 'C',
+      rotations: [
+        [[0, 1, 1], [1, 1, 0]],
+        [[1, 0], [1, 1], [0, 1]]
+      ]
+    },
+    {
+      key: 'D',
+      rotations: [
+        [[1, 1], [1, 1]]
+      ]
+    },
+    {
+      key: 'E',
+      rotations: [
+        [[1, 1, 1, 1]],
+        [[1], [1], [1], [1]]
+      ]
+    },
+    {
+      key: 'F',
+      rotations: [
+        [[1, 0], [1, 0], [1, 1]],
+        [[1, 1, 1], [1, 0, 0]],
+        [[1, 1], [0, 1], [0, 1]],
+        [[0, 0, 1], [1, 1, 1]]
+      ]
+    },
+    {
+      key: 'G',
+      rotations: [
+        [[0, 1], [0, 1], [1, 1]],
+        [[1, 0, 0], [1, 1, 1]],
+        [[1, 1], [1, 0], [1, 0]],
+        [[1, 1, 1], [0, 0, 1]]
+      ]
+    }
+  ]
+
+  function setState(nextState) {
+    state = nextState
+    onStateChange?.(state)
+    updateOverlay()
+  }
+
+  function createEmptyBoard() {
+    return Array.from({ length: ROWS }, () => Array(COLS).fill(null))
+  }
+
+  function getBestScore() {
+    try {
+      return Number(localStorage.getItem(BEST_SCORE_KEY) || 0)
+    } catch {
+      return 0
+    }
+  }
+
+  function setBestScore(value) {
+    bestScore = value
+    try {
+      localStorage.setItem(BEST_SCORE_KEY, String(value))
+    } catch {}
+  }
+
+  function emitScore(delta = 0, forceEmit = false) {
+    if (delta !== 0) {
+      score += delta
+      if (score > bestScore) {
+        setBestScore(score)
+      }
+    }
+
+    if (forceEmit || delta !== 0) {
+      onScoreChange?.({
+        score,
+        bestScore,
+        delta,
+        lines,
+        level,
+        elapsedSeconds
+      })
+    }
+
+    updateHUD()
+  }
+
+  function updateHUD() {
+    if (hudTopEl) {
+      hudTopEl.textContent = `SCORE ${score}  •  BEST ${bestScore}`
+    }
+    if (hudBottomEl) {
+      hudBottomEl.textContent = `LEVEL ${level}  •  LINES ${lines}  •  TIME ${Math.floor(elapsedSeconds)}s`
+    }
+  }
+
+  function updateOverlay() {
+    if (!overlayEl) return
+
+    if (state === 'idle' || state === 'ready') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-cyan-300">STACK RIFT</div>
+          <div class="mt-2 text-xs text-cyan-400/80">Endless glitch stacking</div>
+          <div class="mt-1 text-xs text-cyan-400/80">Clear lines, survive the rifts</div>
+          <div class="mt-3 text-xs text-cyan-300">Press Start</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    if (state === 'paused') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-yellow-300">PAUSED</div>
+          <div class="mt-2 text-xs text-cyan-400/80">Press Start to continue</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    if (state === 'gameover') {
+      overlayEl.innerHTML = `
+        <div class="text-center px-4">
+          <div class="text-sm tracking-widest text-red-400">RIFT COLLAPSE</div>
+          <div class="mt-2 text-xs text-cyan-300">Final Score ${score}</div>
+          <div class="mt-1 text-xs text-cyan-400/80">Tap Reset to dive again</div>
+        </div>
+      `
+      overlayEl.style.display = 'flex'
+      return
+    }
+
+    overlayEl.style.display = 'none'
+  }
+
+  function buildDOM() {
+    mountEl.innerHTML = ''
+
+    root = document.createElement('div')
+    root.className = 'relative w-full h-full overflow-hidden bg-black select-none'
+
+    hudTopEl = document.createElement('div')
+    hudTopEl.className =
+      'absolute left-3 top-3 z-10 text-[11px] tracking-widest text-cyan-300'
+
+    hudBottomEl = document.createElement('div')
+    hudBottomEl.className =
+      'absolute left-3 bottom-16 z-10 text-[11px] tracking-widest text-cyan-400/90'
+
+    canvas = document.createElement('canvas')
+    canvas.className = 'absolute inset-0 w-full h-full'
+
+    overlayEl = document.createElement('div')
+    overlayEl.className =
+      'absolute inset-0 z-20 flex items-center justify-center bg-black/45'
+
+    touchLeftEl = document.createElement('button')
+    touchLeftEl.type = 'button'
+    touchLeftEl.textContent = '◀'
+    touchLeftEl.className =
+      'absolute bottom-4 left-3 z-10 rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-cyan-300 active:scale-95'
+
+    touchRightEl = document.createElement('button')
+    touchRightEl.type = 'button'
+    touchRightEl.textContent = '▶'
+    touchRightEl.className =
+      'absolute bottom-4 left-16 z-10 rounded-lg border border-cyan-400/40 bg-cyan-500/10 px-3 py-2 text-cyan-300 active:scale-95'
+
+    touchRotateEl = document.createElement('button')
+    touchRotateEl.type = 'button'
+    touchRotateEl.textContent = '⟳'
+    touchRotateEl.className =
+      'absolute bottom-4 right-16 z-10 rounded-lg border border-fuchsia-400/40 bg-fuchsia-500/10 px-3 py-2 text-fuchsia-300 active:scale-95'
+
+    touchDropEl = document.createElement('button')
+    touchDropEl.type = 'button'
+    touchDropEl.textContent = '▼'
+    touchDropEl.className =
+      'absolute bottom-4 right-3 z-10 rounded-lg border border-pink-400/40 bg-pink-500/10 px-3 py-2 text-pink-300 active:scale-95'
+
+    root.appendChild(canvas)
+    root.appendChild(hudTopEl)
+    root.appendChild(hudBottomEl)
+    root.appendChild(touchLeftEl)
+    root.appendChild(touchRightEl)
+    root.appendChild(touchRotateEl)
+    root.appendChild(touchDropEl)
+    root.appendChild(overlayEl)
+    mountEl.appendChild(root)
+
+    ctx = canvas.getContext('2d')
+    resizeCanvas()
+  }
+
+  function resizeCanvas() {
+    if (!canvas || !mountEl) return
+    const dpr = window.devicePixelRatio || 1
+    const width = mountEl.clientWidth || 320
+    const height = mountEl.clientHeight || 480
+    canvas.width = Math.floor(width * dpr)
+    canvas.height = Math.floor(height * dpr)
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+    ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
+  }
+
+  function getBoardMetrics() {
+    const width = mountEl.clientWidth || 320
+    const height = mountEl.clientHeight || 480
+    const cell = Math.floor(
+      Math.min(BASE_CELL, (width - 56) / COLS, (height - 170) / ROWS)
+    )
+    const boardWidth = cell * COLS
+    const boardHeight = cell * ROWS
+    const offsetX = Math.floor((width - boardWidth) / 2)
+    const offsetY = Math.max(44, Math.floor((height - boardHeight) / 2) - 20)
+    return { cell, boardWidth, boardHeight, offsetX, offsetY }
+  }
+
+  function randomPiece() {
+    const piece = pieceSet[Math.floor(Math.random() * pieceSet.length)]
+    return {
+      key: piece.key,
+      rotations: piece.rotations,
+      rotationIndex: 0
+    }
+  }
+
+  function currentShape(piece = currentPiece) {
+    return piece.rotations[piece.rotationIndex]
+  }
+
+  function collides(shape, offsetX, offsetY) {
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (!shape[y][x]) continue
+
+        const bx = offsetX + x
+        const by = offsetY + y
+
+        if (bx < 0 || bx >= COLS || by >= ROWS) return true
+        if (by >= 0 && board[by][bx]) return true
+      }
+    }
+    return false
+  }
+
+  function spawnPiece() {
+    currentPiece = randomPiece()
+    const shape = currentShape(currentPiece)
+    currentX = Math.floor((COLS - shape[0].length) / 2)
+    currentY = -Math.min(2, shape.length)
+
+    if (collides(shape, currentX, currentY)) {
+      gameOver('stack-overflow')
+    }
+  }
+
+  function mergePiece() {
+    const shape = currentShape()
+    for (let y = 0; y < shape.length; y++) {
+      for (let x = 0; x < shape[y].length; x++) {
+        if (!shape[y][x]) continue
+        const bx = currentX + x
+        const by = currentY + y
+        if (by >= 0 && by < ROWS && bx >= 0 && bx < COLS) {
+          board[by][bx] = currentPiece.key
+        }
+      }
+    }
+  }
+
+  function clearLines() {
+    let cleared = 0
+
+    for (let y = ROWS - 1; y >= 0; y--) {
+      if (board[y].every(Boolean)) {
+        board.splice(y, 1)
+        board.unshift(Array(COLS).fill(null))
+        cleared++
+        y++
+      }
+    }
+
+    if (cleared > 0) {
+      lines += cleared
+      level = 1 + Math.floor(lines / 8) + Math.floor(elapsedSeconds / 20)
+
+      const scoreMap = {
+        1: 120,
+        2: 320,
+        3: 720,
+        4: 1400
+      }
+
+      const gained = (scoreMap[cleared] || cleared * 400) + level * 10
+      emitScore(gained)
+    }
+  }
+
+  function shiftRow(rowIndex, direction) {
+    if (rowIndex < 0 || rowIndex >= ROWS) return
+    const row = board[rowIndex]
+    if (!row.some(Boolean)) return
+
+    if (direction > 0) {
+      row.unshift(row.pop())
+    } else {
+      row.push(row.shift())
+    }
+  }
+
+  function applyRift() {
+    const filledRows = board
+      .map((row, index) => ({ row, index }))
+      .filter(({ row }) => row.some(Boolean))
+
+    if (filledRows.length === 0) return
+
+    const target = filledRows[Math.floor(Math.random() * filledRows.length)].index
+    const direction = Math.random() > 0.5 ? 1 : -1
+    shiftRow(target, direction)
+
+    const bonus = 15 + Math.floor(level * 2)
+    emitScore(bonus)
+  }
+
+  function maybeTriggerRift() {
+    const interval = Math.max(7, 18 - Math.floor(elapsedSeconds / 15))
+    if (elapsedSeconds - lastRiftAt >= interval) {
+      lastRiftAt = elapsedSeconds
+      applyRift()
+    }
+  }
+
+  function move(dx) {
+    if (state !== 'playing') return
+    const shape = currentShape()
+    if (!collides(shape, currentX + dx, currentY)) {
+      currentX += dx
+    }
+  }
+
+  function rotate() {
+    if (state !== 'playing') return
+    const prevIndex = currentPiece.rotationIndex
+    currentPiece.rotationIndex =
+      (currentPiece.rotationIndex + 1) % currentPiece.rotations.length
+
+    const shape = currentShape()
+    if (!collides(shape, currentX, currentY)) return
+    if (!collides(shape, currentX - 1, currentY)) {
+      currentX -= 1
+      return
+    }
+    if (!collides(shape, currentX + 1, currentY)) {
+      currentX += 1
+      return
+    }
+
+    currentPiece.rotationIndex = prevIndex
+  }
+
+  function hardDrop() {
+    if (state !== 'playing') return
+    let dropped = 0
+    while (!collides(currentShape(), currentX, currentY + 1)) {
+      currentY += 1
+      dropped++
+    }
+    if (dropped > 0) {
+      emitScore(dropped * 2)
+    }
+    lockPiece()
+  }
+
+  function stepDown() {
+    if (!collides(currentShape(), currentX, currentY + 1)) {
+      currentY += 1
+      return true
+    }
+    lockPiece()
+    return false
+  }
+
+  function lockPiece() {
+    mergePiece()
+    clearLines()
+    spawnPiece()
+  }
+
+  function getDropInterval() {
+    const base = 820
+    const speedByTime = Math.min(520, elapsedSeconds * 8)
+    const speedByLevel = (level - 1) * 45
+    const interval = base - speedByTime - speedByLevel
+    return Math.max(85, interval)
+  }
+
+  function drawCell(x, y, color, cell, offsetX, offsetY) {
+    const px = offsetX + x * cell
+    const py = offsetY + y * cell
+
+    ctx.fillStyle = color
+    ctx.fillRect(px + 1, py + 1, cell - 2, cell - 2)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+    ctx.strokeRect(px + 1, py + 1, cell - 2, cell - 2)
+  }
+
+  function drawBackground(width, height) {
+    ctx.fillStyle = '#030712'
+    ctx.fillRect(0, 0, width, height)
+
+    for (let i = 0; i < 18; i++) {
+      const y = (i * 37 + elapsedSeconds * 8) % height
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(34,211,238,0.04)' : 'rgba(168,85,247,0.03)'
+      ctx.fillRect(0, y, width, 1)
+    }
+  }
+
+  function render() {
+    if (!ctx || !canvas) return
+    const width = mountEl.clientWidth || 320
+    const height = mountEl.clientHeight || 480
+    const { cell, boardWidth, boardHeight, offsetX, offsetY } = getBoardMetrics()
+
+    drawBackground(width, height)
+
+    ctx.fillStyle = 'rgba(8,15,30,0.92)'
+    ctx.fillRect(offsetX - 6, offsetY - 6, boardWidth + 12, boardHeight + 12)
+
+    ctx.strokeStyle = 'rgba(34,211,238,0.28)'
+    ctx.strokeRect(offsetX - 6, offsetY - 6, boardWidth + 12, boardHeight + 12)
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        ctx.fillStyle = 'rgba(255,255,255,0.03)'
+        ctx.fillRect(offsetX + x * cell, offsetY + y * cell, cell - 1, cell - 1)
+
+        const block = board[y][x]
+        if (block) {
+          drawCell(x, y, colors[block] || '#fff', cell, offsetX, offsetY)
+        }
+      }
+    }
+
+    if (currentPiece) {
+      const shape = currentShape()
+      for (let y = 0; y < shape.length; y++) {
+        for (let x = 0; x < shape[y].length; x++) {
+          if (!shape[y][x]) continue
+          const bx = currentX + x
+          const by = currentY + y
+          if (by >= 0) {
+            drawCell(bx, by, colors[currentPiece.key] || '#fff', cell, offsetX, offsetY)
+          }
+        }
+      }
+    }
+  }
+
+  function loop(timestamp) {
+    if (state !== 'playing') return
+
+    if (!lastTimestamp) lastTimestamp = timestamp
+    const delta = timestamp - lastTimestamp
+    lastTimestamp = timestamp
+
+    elapsedSeconds = (timestamp - gameStartedAt) / 1000
+    level = 1 + Math.floor(lines / 8) + Math.floor(elapsedSeconds / 20)
+
+    accumulatedDrop += delta
+    const interval = softDropping ? Math.max(30, getDropInterval() * 0.18) : getDropInterval()
+
+    while (accumulatedDrop >= interval) {
+      accumulatedDrop -= interval
+      stepDown()
+      if (state !== 'playing') break
+    }
+
+    maybeTriggerRift()
+    updateHUD()
+    render()
+
+    animationId = requestAnimationFrame(loop)
+  }
+
+  function start() {
+    if (state === 'playing') return
+
+    if (state === 'paused') {
+      setState('playing')
+      lastTimestamp = 0
+      animationId = requestAnimationFrame(loop)
+      return
+    }
+
+    if (state === 'gameover') {
+      resetToReady()
+      return
+    }
+
+    if (state === 'idle' || state === 'ready') {
+      score = 0
+      lines = 0
+      level = 1
+      elapsedSeconds = 0
+      lastRiftAt = 0
+      board = createEmptyBoard()
+      spawnPiece()
+      emitScore(0, true)
+      setState('playing')
+      accumulatedDrop = 0
+      lastTimestamp = 0
+      gameStartedAt = performance.now()
+      animationId = requestAnimationFrame(loop)
+    }
+  }
+
+  function stop() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+
+    if (state === 'playing') {
+      setState('paused')
+      render()
+    }
+  }
+
+  function resetToReady() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    score = 0
+    lines = 0
+    level = 1
+    elapsedSeconds = 0
+    lastRiftAt = 0
+    board = createEmptyBoard()
+    currentPiece = null
+    bestScore = getBestScore()
+    emitScore(0, true)
+    render()
+    setState('idle')
+  }
+
+  function reset() {
+    if (state !== 'gameover') return
+
+    cancelAnimationFrame(animationId)
+    animationId = null
+    score = 0
+    lines = 0
+    level = 1
+    elapsedSeconds = 0
+    lastRiftAt = 0
+    board = createEmptyBoard()
+    bestScore = getBestScore()
+    spawnPiece()
+    emitScore(0, true)
+    setState('playing')
+    accumulatedDrop = 0
+    lastTimestamp = 0
+    gameStartedAt = performance.now()
+    animationId = requestAnimationFrame(loop)
+  }
+
+  function gameOver(reason = 'unknown') {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    setState('gameover')
+    render()
+
+    onGameOver?.({
+      score,
+      bestScore,
+      duration: Math.round(elapsedSeconds * 10) / 10,
+      reason,
+      lines,
+      level
+    })
+  }
+
+  function destroy() {
+    cancelAnimationFrame(animationId)
+    animationId = null
+    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('keyup', handleKeyUp)
+    touchLeftEl?.removeEventListener('click', handleLeft)
+    touchRightEl?.removeEventListener('click', handleRight)
+    touchRotateEl?.removeEventListener('click', handleRotate)
+    touchDropEl?.removeEventListener('click', handleDrop)
+    mountEl.innerHTML = ''
+    setState('destroyed')
+  }
+
+  function getState() {
+    return {
+      state,
+      score,
+      bestScore,
+      lines,
+      level,
+      elapsedSeconds: Math.floor(elapsedSeconds)
+    }
+  }
+
+  function handleResize() {
+    resizeCanvas()
+    render()
+  }
+
+  function handleLeft() {
+    move(-1)
+    render()
+  }
+
+  function handleRight() {
+    move(1)
+    render()
+  }
+
+  function handleRotate() {
+    rotate()
+    render()
+  }
+
+  function handleDrop() {
+    hardDrop()
+    render()
+  }
+
+  function handleKeyDown(event) {
+    if (state !== 'playing' && !['Enter', ' '].includes(event.key)) return
+
+    if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
+      event.preventDefault()
+      move(-1)
+      render()
+      return
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
+      event.preventDefault()
+      move(1)
+      render()
+      return
+    }
+
+    if (event.key === 'ArrowUp' || event.key === 'w' || event.key === 'W' || event.key === 'x' || event.key === 'X') {
+      event.preventDefault()
+      rotate()
+      render()
+      return
+    }
+
+    if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+      event.preventDefault()
+      softDropping = true
+      return
+    }
+
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault()
+      if (state === 'idle' || state === 'ready' || state === 'paused') {
+        start()
+      } else if (state === 'playing') {
+        hardDrop()
+        render()
+      } else if (state === 'gameover') {
+        reset()
+      }
+    }
+
+    if (event.key === 'p' || event.key === 'P') {
+      event.preventDefault()
+      if (state === 'playing') stop()
+      else if (state === 'paused') start()
+    }
+  }
+
+  function handleKeyUp(event) {
+    if (event.key === 'ArrowDown' || event.key === 's' || event.key === 'S') {
+      softDropping = false
+    }
+  }
+
+  buildDOM()
+  bestScore = getBestScore()
+  board = createEmptyBoard()
+  emitScore(0, true)
+  render()
+  setState('idle')
+
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
+  touchLeftEl.addEventListener('click', handleLeft)
+  touchRightEl.addEventListener('click', handleRight)
+  touchRotateEl.addEventListener('click', handleRotate)
+  touchDropEl.addEventListener('click', handleDrop)
+
+  onReady?.()
+
+  return {
+    start,
+    stop,
+    reset,
+    destroy,
+    getState
+  }
+}
