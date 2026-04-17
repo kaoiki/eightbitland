@@ -33,23 +33,26 @@
     <!-- Filters / Mode Switch -->
     <section class="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <!-- 202604171701 class中新加了overflow-x-auto custom-scrollbar  内容超出出现滚动条并自定义滚动条样式-->
-      <div class="border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-3 lg:col-span-9 overflow-x-auto custom-scrollbar">
-          <div class="flex flex-nowrap gap-3">
-            <!-- 202604171701 根据数据结构调整 将mode 改为 mode.game_name-->
-            <button
-              v-for="mode in modes"
-              :key="mode"
-              :class="[
-                'px-4 py-2 text-xs text-nowrap font-bold uppercase tracking-[0.2em] transition',
-                activeMode === mode.game_name
-                  ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
-                  : 'bg-[var(--color-surface-container-low)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-high)]'
-              ]"
-              @click="switchGame(mode)"
-            >
-              {{ mode.game_name }}
-            </button>
-        </div>
+      <div class="border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] pr-3 pl-3 lg:col-span-9 ">
+          <div class="pt-3 pb-3 overflow-x-auto custom-scrollbar h-full">
+            <div class="flex flex-nowrap gap-3">
+              <!-- 202604171701 根据数据结构调整 将mode 改为 mode.game_name-->
+              <button
+                v-for="mode in modes"
+                :key="mode"
+                :class="[
+                  'px-4 py-2 text-xs text-nowrap font-bold uppercase tracking-[0.2em] transition',
+                  activeMode === mode.game_name
+                    ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
+                    : 'bg-[var(--color-surface-container-low)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-high)]'
+                ]"
+                @click="switchGame(mode)"
+              >
+                {{ mode.game_name }}
+              </button>
+            </div>
+          </div>
+            
       </div>
 
       <div class="border-l-2 border-[var(--color-primary)] bg-[var(--color-surface-container-lowest)] p-4 lg:col-span-3">
@@ -88,7 +91,7 @@
                 : 'bg-[var(--color-surface-container)] hover:bg-[var(--color-surface-container-high)]'
             ]"
           >
-            <div class="col-span-2 sm:col-span-1">
+            <div class="col-span-2 sm:col-span-1" v-if="player.rank != '' ">
               <span
                 :class="[
                   'inline-flex min-w-[2.5rem] items-center justify-center px-2 py-1 text-xs font-black uppercase',
@@ -105,7 +108,7 @@
               </span>
             </div>
 
-            <div class="col-span-6 flex items-center gap-3 sm:col-span-5">
+            <div class="col-span-6 flex items-center gap-3 sm:col-span-5" v-if="player.rank != '' ">
               <img
                 :src="player.avatar"
                 :alt="player.name"
@@ -121,23 +124,28 @@
               </div>
             </div>
 
-            <div class="hidden sm:block sm:col-span-3">
+            <div class="hidden sm:block sm:col-span-3" v-if="player.rank != '' ">
               <p class="truncate text-xs uppercase text-[var(--color-on-surface-variant)]">
                 {{ player.game }}
               </p>
             </div>
 
-            <div class="col-span-4 text-right sm:col-span-2">
+            <div class="col-span-4 text-right sm:col-span-2" v-if="player.rank != '' ">
               <p class="text-sm font-black uppercase text-[var(--color-primary)]">
                 {{ player.score }}
               </p>
             </div>
+
             <!-- 202604171701 暂时隐藏 以待后用 -->
             <!-- <div class="hidden sm:block sm:col-span-1 text-right">
               <p class="text-xs font-bold uppercase">
                 {{ player.winRate }}
               </p>
             </div> -->
+
+            <div class="w-full col-span-12 text-center text-[var(--color-outline-variant)]" v-if="player.rank == '' ">
+              Your spot is waiting
+            </div>
           </div>
         </div>
       </div>
@@ -276,6 +284,21 @@ const leaderboardInit = async () => {
         avatar: item.avatar
       })
     })
+    // 不足10条 补上占位
+    if(allPlayers.value.length < 10){
+      const len = 10 - allPlayers.value.length;
+      for(let i=0; i<len; i++){
+        allPlayers.value.push({
+          rank: '',
+          name: '',
+          title: '',
+          game: '',
+          score: '',
+          winRate: '',
+          avatar: null
+        })
+      }
+    }
     // 处理top_3_pilots数据
     topThree.value = []
     res.data.top_3_pilots.forEach((item,index) => {
