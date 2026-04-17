@@ -348,6 +348,22 @@ const switchGame = async (item) => {
         avatar: item.avatar
       })
     })
+
+    // 不足10条 补上占位
+    if(allPlayers.value.length < 10){
+      const len = 10 - allPlayers.value.length;
+      for(let i=0; i<len; i++){
+        allPlayers.value.push({
+          rank: '',
+          name: '',
+          title: '',
+          game: '',
+          score: '',
+          winRate: '',
+          avatar: null
+        })
+      }
+    }
     
   }catch(err) {
     toast.add({
