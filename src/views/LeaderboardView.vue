@@ -143,7 +143,7 @@
               </p>
             </div> -->
 
-            <div class="w-full col-span-12 text-center text-[var(--color-outline-variant)]" v-if="player.rank == '' ">
+            <div class="h-10 flex items-center justify-center col-span-12 text-center text-[var(--color-outline-variant)]" v-if="player.rank == '' ">
               Your spot is waiting
             </div>
           </div>
