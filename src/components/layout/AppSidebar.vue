@@ -33,6 +33,7 @@
               {{nickname}}
             </p>
             <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">
+              <!-- 202404161851 默认level为0 -->
               Level 0
             </p>
           </div>
@@ -182,6 +183,7 @@ const isLoggedIn = computed(() => loginStatus.value)
 
 // 底部 energy
 const energyText = computed(() => {
+  // 202404161851 将Energy 99 改为 Energy 0
   return isLoggedIn.value ? 'Energy: 0' : 'Login Required'
 })
 
