@@ -32,21 +32,23 @@
 
     <!-- Filters / Mode Switch -->
     <section class="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <div class="border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-3 lg:col-span-9">
-        <div class="flex flex-wrap gap-3">
-          <button
-            v-for="mode in modes"
-            :key="mode"
-            :class="[
-              'px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] transition',
-              activeMode === mode
-                ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
-                : 'bg-[var(--color-surface-container-low)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-high)]'
-            ]"
-            @click="activeMode = mode"
-          >
-            {{ mode }}
-          </button>
+      <!-- 202604171701 class中新加了overflow-x-auto custom-scrollbar  内容超出出现滚动条并自定义滚动条样式-->
+      <div class="border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-3 lg:col-span-9 overflow-x-auto custom-scrollbar">
+          <div class="flex flex-nowrap gap-3">
+            <!-- 202604171701 根据数据结构调整 将mode 改为 mode.game_name-->
+            <button
+              v-for="mode in modes"
+              :key="mode"
+              :class="[
+                'px-4 py-2 text-xs text-nowrap font-bold uppercase tracking-[0.2em] transition',
+                activeMode === mode.game_name
+                  ? 'bg-[var(--color-primary)] text-[var(--color-on-primary)]'
+                  : 'bg-[var(--color-surface-container-low)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-high)]'
+              ]"
+              @click="switchGame(mode)"
+            >
+              {{ mode.game_name }}
+            </button>
         </div>
       </div>
 
@@ -72,11 +74,12 @@
             <div class="col-span-6 sm:col-span-5">Player</div>
             <div class="hidden sm:block sm:col-span-3">Main Game</div>
             <div class="col-span-4 sm:col-span-2 text-right">Score</div>
-            <div class="hidden sm:block sm:col-span-1 text-right">Win</div>
+            <!-- 202604171701 暂时隐藏 以待后用 -->
+            <!-- <div class="hidden sm:block sm:col-span-1 text-right">Win</div> -->
           </div>
 
           <div
-            v-for="player in rankingList"
+            v-for="player in allPlayers"
             :key="player.rank"
             :class="[
               'grid grid-cols-12 items-center border-b border-[rgba(66,73,78,0.12)] px-4 py-4 transition-colors sm:px-6',
@@ -129,12 +132,12 @@
                 {{ player.score }}
               </p>
             </div>
-
-            <div class="hidden sm:block sm:col-span-1 text-right">
+            <!-- 202604171701 暂时隐藏 以待后用 -->
+            <!-- <div class="hidden sm:block sm:col-span-1 text-right">
               <p class="text-xs font-bold uppercase">
                 {{ player.winRate }}
               </p>
-            </div>
+            </div> -->
           </div>
         </div>
       </div>
@@ -167,8 +170,9 @@
                 <p class="truncate text-sm font-bold uppercase">
                   {{ player.name }}
                 </p>
-                <p class="text-[10px] uppercase tracking-[0.2em] text-[var(--color-secondary)]">
-                  {{ player.score }}
+                <p class="text-[16px] uppercase tracking-[0.2em] text-[var(--color-secondary)] flex content-center items-center">
+                  <!-- 202604171701 新增加一个奖杯icon -->
+                 <span class="material-symbols-outlined" style="font-size:16px">trophy</span>  {{ player.score }}
                 </p>
               </div>
             </div>
@@ -206,11 +210,21 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+// ↓ 202604171701  以下全动 为榜单页面的接口请求，逻辑处理和新增css
+import { useToast } from '@nuxt/ui/composables' // 关键：引入Nuxt UI的useToast
+import { request } from '../utils/request' // 引入request
 
-const activeMode = ref('Global')
+const toast = useToast() // 调用useToast
 
-const modes = ['Global', 'Weekly', 'Friends']
+const activeMode = ref('All')
+
+const modes = ref([
+  {
+    game_id:'All',
+    game_name:'All'
+  }
+])
 
 const stats = [
   { label: 'Players Ranked', value: '12.4K' },
@@ -219,81 +233,129 @@ const stats = [
   { label: 'Updated', value: 'LIVE' }
 ]
 
-const allPlayers = [
-  {
-    rank: 1,
-    name: 'Vortex',
-    title: 'Grid Dominator',
-    game: 'Tetris',
-    score: '999,900',
-    winRate: '98%',
-    avatar: 'https://i.pravatar.cc/100?img=12'
-  },
-  {
-    rank: 2,
-    name: 'Pixel_Punk',
-    title: 'Wall Breaker',
-    game: 'Brick Breaker',
-    score: '932,440',
-    winRate: '95%',
-    avatar: 'https://i.pravatar.cc/100?img=14'
-  },
-  {
-    rank: 3,
-    name: 'Neon',
-    title: 'Signal Runner',
-    game: 'Reflex',
-    score: '901,210',
-    winRate: '94%',
-    avatar: 'https://i.pravatar.cc/100?img=33'
-  },
-  {
-    rank: 4,
-    name: 'ByteKid',
-    title: 'Combo Hunter',
-    game: 'Memory',
-    score: '870,800',
-    winRate: '91%',
-    avatar: 'https://i.pravatar.cc/100?img=20'
-  },
-  {
-    rank: 5,
-    name: 'ZeroLag',
-    title: 'Arcade Ghost',
-    game: 'Tetris',
-    score: '845,110',
-    winRate: '90%',
-    avatar: 'https://i.pravatar.cc/100?img=18'
-  },
-  {
-    rank: 6,
-    name: 'NovaHex',
-    title: 'Pulse Striker',
-    game: 'Brick Breaker',
-    score: '801,540',
-    winRate: '88%',
-    avatar: 'https://i.pravatar.cc/100?img=45'
-  },
-  {
-    rank: 7,
-    name: 'RetroFox',
-    title: 'Light Jumper',
-    game: 'Reflex',
-    score: '780,200',
-    winRate: '86%',
-    avatar: 'https://i.pravatar.cc/100?img=50'
-  },
-  {
-    rank: 8,
-    name: 'MonoCat',
-    title: 'Pattern Mind',
-    game: 'Memory',
-    score: '752,980',
-    winRate: '84%',
-    avatar: 'https://i.pravatar.cc/100?img=60'
-  }
-]
+const allPlayers = ref([])
+const topThree = ref([])
 
-const rankingList = computed(() => allPlayers)
-const topThree = computed(() => allPlayers.slice(0, 3))
+// 获取游戏清单
+const getGames = async () => {
+  try {
+    const res = await request.get('games','')
+    res.data.items.forEach(item => {
+      modes.value.push({
+        game_id:item.game_id,
+        game_name:item.game_name
+      })
+    });
+  }catch(err) {
+    toast.add({
+      title: 'ERROR',
+      description: err.message,
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+  }
+}
+
+// 初始化获取 all 游戏清单
+const leaderboardInit = async () => {
+  try {
+    const res = await request.get('leaderboard-init','')
+    // 获取游戏清单
+    getGames()
+    // 处理榜单数据
+    allPlayers.value = [];
+    res.data.all_leaderboard.forEach(item => {
+      allPlayers.value.push({
+        rank: 1,
+        name: item.nickname,
+        title: (item.play_date).toString().slice(0, 19).replace('T',' '),
+        game: item.game_name,
+        score: item.score,
+        winRate: '84%',
+        avatar: item.avatar
+      })
+    })
+    // 处理top_3_pilots数据
+    topThree.value = []
+    res.data.top_3_pilots.forEach((item,index) => {
+      console.log(index,item)
+      topThree.value.push({
+        rank: index + 1,
+        name: item.nickname,
+        score: item.first_place_count,
+        avatar: item.avatar
+      })
+    });
+    // console.log(res)  
+  }catch(err) {
+    toast.add({
+      title: 'ERROR',
+      description: err.message,
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+  }
+}
+
+// 切换游戏榜单
+const switchGame = async (item) => {
+  activeMode.value = item.game_name
+  // 切换到all时走init接口
+  if(item.game_name == 'All'){
+    leaderboardInit()
+    return false
+  }
+
+  try {
+    let param = {
+      game_id:item.game_id
+    }
+    const res = await request.get('leaderboard',{},param)
+    allPlayers.value = [];
+    res.data.items.forEach((item,index) => {
+      allPlayers.value.push({
+        rank: index + 1,
+        name: item.nickname,
+        title: (item.play_date).toString().slice(0, 19).replace('T',' '),
+        game: item.game_name,
+        score: item.score,
+        winRate: '84%',
+        avatar: item.avatar
+      })
+    })
+    
+  }catch(err) {
+    toast.add({
+      title: 'ERROR',
+      description: err.message,
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+  }
+}
+
+onMounted(() => {
+  leaderboardInit()
+})
 </script>
+
+<style scoped>
+/* 自定义漂亮滚动条 */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px; /* 横向滚动条高度 */
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(66, 73, 78, 0.08); /* 轨道背景 */
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(66, 73, 78, 0.3); /* 滑块颜色 */
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(66, 73, 78, 0.5); /* hover 加深 */
+}
+</style>

@@ -21,17 +21,19 @@
         class="mb-8 bg-[var(--color-surface-container-low)] p-4"
       >
         <div class="mb-4 flex items-center gap-4">
+          <!-- 202404161851 给img的src赋值 -->
           <img
             alt="Pixel Avatar"
             class="h-12 w-12 grayscale"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAX6MVqZ_MVVLEnSf1QXRTqUhC4px9h-rxnnxy4YR2I-feP8kjZYjaNvDKO__q3fvhlYd23vFzaPARlstKpzC6r30dJCLfKTGFYh1Scx-LjqXBp3viYnsU3m4BjuwwhJyIz0rv1c1NkoXxBDO1z_cErJiF01R7GFCVo0kTyUd2Gm5XQhSAOB4sKqEATPSoWGusjFrsMsZBNT-DdrATBB6q-7IwDg7BiBCyKjf14HxPmv_BadzXkZajkzez_GMpPPDDdVDP-8t7Cipc"
+            :src="avatar"
           />
           <div>
             <p class="text-sm font-bold uppercase tracking-widest text-[var(--color-primary)]">
-              Player One
+              <!-- 202404161851 给用户名赋值 -->
+              {{nickname}}
             </p>
             <p class="text-[10px] uppercase tracking-[0.2em] text-slate-500">
-              Level 42
+              Level 0
             </p>
           </div>
         </div>
@@ -144,12 +146,15 @@ const router = useRouter()
 // ========================
 const primaryItems = [
   { label: 'Home', icon: 'home', to: '/' },
-  { label: 'Leaderboard', icon: 'leaderboard', to: '/leaderboard' }
+  { label: 'Leaderboard', icon: 'leaderboard', to: '/leaderboard' },
+  { label: 'Achievement', icon: 'emoji_events', to: '/achievement' },//202604091703 配置菜单
 ]
 
 const secondaryItems = [
   { label: 'Arcade', icon: 'sports_esports', to: '/arcade' },
   { label: 'Battle', icon: 'swords', to: '/battle' },
+  { label: 'Activity', icon: 'local_activity', to: '/activity' }, //202604091703 配置菜单
+  { label: 'Shop', icon: 'store', to: '/shop' }, //202604091703 配置菜单
   { label: 'Market', icon: 'storefront', to: '/market' },
   { label: 'Settings', icon: 'settings', to: '/settings' }
 ]
@@ -159,11 +164,16 @@ const secondaryItems = [
 // ========================
 const loginStatus = ref(false)
 
+
+const avatar = ref('') // 202404161851 用户头像
+const nickname = ref('') // 202404161851 用户昵称
+
 // 初始化读取 localStorage
 onMounted(() => {
   if (typeof window !== 'undefined') {
-    loginStatus.value =
-      window.localStorage.getItem('8bit_loginStatus') === 'true'
+    loginStatus.value = window.localStorage.getItem('8bit_loginStatus') === 'true'
+    avatar.value = JSON.parse(localStorage.getItem('8bit_login_info')).avatar  // 202404161851 从localStorage读取头像
+    nickname.value = JSON.parse(localStorage.getItem('8bit_login_info')).nickname // 202404161851 从localStorage读取昵称
   }
 })
 
@@ -172,7 +182,7 @@ const isLoggedIn = computed(() => loginStatus.value)
 
 // 底部 energy
 const energyText = computed(() => {
-  return isLoggedIn.value ? 'Energy: 99' : 'Login Required'
+  return isLoggedIn.value ? 'Energy: 0' : 'Login Required'
 })
 
 // ========================
@@ -188,6 +198,8 @@ function handleNavClick() {
 function handleLogout() {
   if (typeof window !== 'undefined') {
     window.localStorage.removeItem('8bit_loginStatus')
+    window.localStorage.removeItem('8bit_login_info') //202404161851 清除登录时存储的信息
+    window.localStorage.removeItem('8bit_token') //202404161851 清除token
   }
 
   // 直接修改响应式状态

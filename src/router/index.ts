@@ -10,7 +10,11 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ForgetView from '../views/ForgetView.vue'
 import ArcadeView from '../views/ArcadeView.vue'
-
+// ↓ 202604091703 引入三个新增页面
+import ActivityView from '../views/ActivityView.vue'
+import ShopView from '../views/ShopView.vue'
+import AchievementView from '../views/AchievementView.vue'
+// ↑
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
@@ -42,7 +46,24 @@ const router = createRouter({
           path: 'settings',
           name: 'settings',
           component: SettingsView
-        }
+        },
+        // ↓ 202604091703 给三个新页面配置路由
+        {
+          path: 'activity',
+          name: 'activity',
+          component: ActivityView
+        },
+        {
+          path: 'shop',
+          name: 'shop',
+          component: ShopView
+        },
+        {
+          path: 'achievement',
+          name: 'achievement',
+          component: AchievementView
+        },
+        // ↑
       ]
     },
     {
@@ -88,7 +109,7 @@ const router = createRouter({
             component: ArcadeView
             }
         ]
-    }
+    },
   ]
 })
 

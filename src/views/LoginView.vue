@@ -15,8 +15,8 @@
       <h1 class="mb-6 text-2xl font-bold uppercase text-[var(--color-primary)]">
         Login
       </h1>
-
-      <form class="space-y-4" @submit.prevent="goHome">
+      <!-- 202404161851 将原来的@submit.prevent="goHome" 改为 @submit.prevent="login" -->
+      <form class="space-y-4" @submit.prevent="login">
         <div>
           <label class="mb-2 block text-sm uppercase tracking-widest text-[var(--color-secondary)]">
             Email
@@ -120,8 +120,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '@nuxt/ui/composables' // 202404161851 引入Nuxt UI的useToast
+import { request } from '../utils/request' //202404161851 引入request
+import { useUserStore } from '../stores/index' // 202404161851 引入状态管理器
 
 const router = useRouter()
+
+const toast = useToast() // 202404161851 调用useToast
+
+const useStore = useUserStore() //202404161851 调用状态存储
 
 const email = ref('')
 const password = ref('')
@@ -155,5 +162,65 @@ function goForget() {
 
 function goHome() {
   router.push('/')
+}
+
+// 202404161851 登录账号
+async function login() {
+  // 判断邮箱是否输入
+  if(!email.value.trim()){
+    toast.add({
+      title: 'Verification failed',
+      description: 'Please enter your email.',
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+    return false
+  }
+  // 判断邮箱格式是否正确
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const isValidEmail = re.test(String(email.value).toLowerCase())
+  if(!isValidEmail){
+    toast.add({
+      title: 'Verification failed',
+      description: 'Please check if your email format is correct.',
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+    return false
+  }
+  // 判断密码是否为空
+  if(!password.value.trim()){
+    toast.add({
+      title: 'Verification failed',
+      description: 'Please enter your password, which must be at least 6 characters long.',
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+    return false
+  }
+  // 满足上述条件请求接口，登录账号
+  try {
+    let param = {
+      "email": email.value,
+      "password": password.value,
+    }
+    const res = await request.post('login',param)
+    useStore.setToken(res.data.token)
+    localStorage.setItem('8bit_login_info', JSON.stringify(res.data))
+    localStorage.setItem('8bit_loginStatus', 'true')
+    console.log(res)  
+    router.push('/')
+  }catch(err) {
+    toast.add({
+      title: 'Verification failed',
+      description: err.message,
+      icon: 'i-lucide-circle-alert',
+      color:'warning',
+      progress: false
+    })
+  }
 }
 </script>
