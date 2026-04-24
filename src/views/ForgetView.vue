@@ -17,7 +17,7 @@
       </h1>
 
       <p class="mb-6 text-sm text-slate-400">
-        Enter your email and we will send you a password reset link.
+        <!-- 202604241037 将原来不合适的文案删掉-->
       </p>
       <!-- 202404170935  将原来的@submit.prevent="goLogin" 改为 @submit.prevent="resetPassword"-->
       <form class="space-y-4" @submit.prevent="resetPassword">
@@ -65,13 +65,15 @@
             :ui="inputUi"
           >
             <template #trailing>
+              <!-- 202604241015 新增 按钮禁用控制及文案动态展示 -->
               <UButton
                 class="w-full bg-[var(--color-primary)] py-2 font-bold uppercase tracking-widest text-[var(--color-on-primary)] rounded-none hover:text-[var(--color-on-primary)] active:text-[var(--color-on-primary)]"
                 icon="i-lucide-send" 
                 variant="link"
                 @click="getCode"
+                :disabled="getCodeBtnDisabled"
               >
-                GET CODE
+                {{getCodeShowContent}}
               </UButton>
             </template>
           </UInput>
@@ -116,12 +118,12 @@
           </UInput>
         </div>
         <!-- ↑ -->
-
         <button
           type="submit"
           class="w-full bg-[var(--color-primary)] py-3 font-bold uppercase tracking-widest text-[var(--color-on-primary)]"
         >
-          Send Reset Link
+          <!-- 202604241037 将原来的Send Reset Link 修改为Reset PassWord-->
+          Reset PassWord
         </button>
       </form>
 
@@ -145,6 +147,9 @@ import { useRouter } from 'vue-router'
 import { useToast } from '@nuxt/ui/composables' // 202404170935 关键：引入Nuxt UI的useToast
 import { request } from '../utils/request' // 202404170935 引入request
 
+import Swal from 'sweetalert2' //202604240944 注册成功之后引导用户去登录
+import { useUserStore } from '../stores/index' // 202604241015 引入状态管理器
+
 const router = useRouter()
 
 const toast = useToast() // 202404170935 调用useToast
@@ -154,6 +159,10 @@ const email = ref('')
 const code = ref('') 
 const password = ref('')
 const showPassword = ref(false)
+
+const getCodeShowContent = ref('GET CODE') //202604241015 获取验证码按钮的文案
+const getCodeBtnDisabled = ref(false) //202604241015 获取验证码按钮是否禁用
+const useStore = useUserStore() //202604241015 调用状态存储
 
 const inputUi = {
   root: 'w-full',
@@ -222,6 +231,20 @@ async function getCode() {
       color:'success',
       progress: false
     })
+    // 202604241015 获取验证码成功后 按钮置灰 300s倒计时结束恢复可点
+    getCodeBtnDisabled.value = true;
+    let timerCount = useStore.timerCount
+    getCodeShowContent.value = `${timerCount} s`
+    const timer = setInterval(() => {
+      if(timerCount <= useStore.timerCount && timerCount > 1){
+        timerCount--;
+        getCodeShowContent.value = `${timerCount} s`
+      }else{
+        clearInterval(timer)
+        getCodeShowContent.value = 'GET CODE'
+        getCodeBtnDisabled.value = false;
+      }
+    },1000)
   } catch (err) {
     console.log(err)
     toast.add({
@@ -303,8 +326,22 @@ async function resetPassword() {
       "code": code.value
     }
     const res = await request.post('password-reset',param)
-    router.push('/login')
-    console.log(res)  
+    //202604240944 注册成功之后引导用户去登录
+    Swal.fire({
+      title: '',
+      text: "Account registration successful, you can click the 'Login' button below to log in",
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Login',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        router.push('/login')
+      }
+    });
+      
   }catch(err) {
     toast.add({
       title: 'Verification failed',
