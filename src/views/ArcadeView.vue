@@ -164,6 +164,13 @@ async function handleGameOver(payload) {
     const res = await request.post('game-scores', param)
     console.log(res)
 
+    // 服务器可能返回比本地更高的历史分 → 同步本地缓存
+    const serverScore = res?.data?.score
+    if (typeof serverScore === 'number' && serverScore !== best.value) {
+      best.value = serverScore
+      saveBestScoreLocally(currentGameId.value, serverScore)
+    }
+
     toast.add({
       title: 'Submit Success',
       description: 'Game score has been submitted.',
