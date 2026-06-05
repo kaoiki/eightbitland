@@ -30,7 +30,7 @@ const endLoading = () => {
 
 // 创建 axios 实例
 const service = axios.create({
-  baseURL: 'https://www.heartbeat.cool:2248',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://www.heartbeat.cool:2248',
   timeout: 300000,
   headers: {
     'Content-Type': 'application/json;charset=UTF-8'
