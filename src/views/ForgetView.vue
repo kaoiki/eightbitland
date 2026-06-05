@@ -326,10 +326,10 @@ async function resetPassword() {
       "code": code.value
     }
     const res = await request.post('password-reset',param)
-    //202604240944 注册成功之后引导用户去登录
+    //202604240944 密码重置成功之后引导用户去登录
     Swal.fire({
       title: '',
-      text: "Account registration successful, you can click the 'Login' button below to log in",
+      text: "Password reset successful, you can click the 'Login' button below to log in",
       icon: 'success',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',

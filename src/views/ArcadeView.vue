@@ -35,8 +35,11 @@ import { loadExternalGame } from '../games/runtime/loadExternalGame'
 
 import { request } from '../utils/request' //202604171435  引入request
 import { useToast } from '@nuxt/ui/composables' //202604171435 引入toast
+import Swal from 'sweetalert2' // 未登录弹窗引导
+import { useRouter } from 'vue-router'
 
 const toast = useToast() //202604171435 调用toast
+const router = useRouter()
 
 const currentGameId = ref('retro-dodge')
 const currentGame = computed(() => gameRegistry[currentGameId.value] || null)
@@ -73,68 +76,81 @@ function handleScoreChange(payload) {
   best.value = payload.bestScore
 }
 
-// 202604171435 游戏结束 提交分数
+// 统一写入本地最高分缓存
+function saveBestScoreLocally(id, val) {
+  const keyMap = {
+    'retro-dodge': 'retro_dodge_best_score',
+    'click-rush': 'click_rush_best_score',
+    'color-blitz': 'color_blitz_best_score',
+    'lane-shot': 'lane_shot_best_score',
+    'stack-rift': 'stack_rift_best_score',
+    'odd-tap': 'odd_tap_best_score',
+    'number-order': 'number_order_best_score',
+    'dot-dodge': 'dot_dodge_best_score',
+  }
+  const key = keyMap[id]
+  if (key) localStorage.setItem(key, String(val))
+}
+
+// 202604171435 游戏结束 -> 提交分数
 async function handleGameOver(payload) {
   score.value = payload.score
   best.value = payload.bestScore
-  // 该局游戏创造了历史最高分时提交后台
-  if(score.value == best.value){
-    try {
-      let param = {
-        "game_id": currentGameId.value,
-        "score": score.value
+
+  // 只有创造历史最高分时才需要处理
+  if (score.value !== best.value) return
+
+  // 先写入本地缓存（无论是否登录都保留记录）
+  saveBestScoreLocally(currentGameId.value, score.value)
+
+  // 未登录：弹窗引导，不走网络
+  const isLoggedIn = localStorage.getItem('8bit_loginStatus') === 'true'
+  if (!isLoggedIn) {
+    Swal.fire({
+      title: 'Leaderboard Unavailable',
+      text: 'Login required to enter the leaderboard. Your score is saved locally.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#c2cf47',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Login',
+      cancelButtonText: 'Register',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        router.push('/login')
+      } else if (result.dismiss === Swal.DismissReason.cancel) {
+        router.push('/register')
       }
-      const res = await request.post('game-scores',param)
-      console.log(res)
-      // 如果因系统原因当前提交分数不是最高分，那么手动更新浏览器缓存
-      if(!res.data.create_datetime){
-        switch (currentGameId.value) {
-          case 'retro-dodge':
-              localStorage.setItem('retro_dodge_best_score',res.data.score)
-            break;
-          case 'click-rush':
-              localStorage.setItem('click_rush_best_score',res.data.score)
-            break;
-          case 'color-blitz':
-              localStorage.setItem('color_blitz_best_score',res.data.score)
-            break;
-          case 'lane-shot':
-              localStorage.setItem('lane_shot_best_score',res.data.score)
-            break;
-          case 'stack-rift':
-              localStorage.setItem('stack_rift_best_score',res.data.score)
-            break;
-          case 'odd-tap':
-              localStorage.setItem('odd_tap_best_score',res.data.score)
-            break;
-          case 'number-order':
-              localStorage.setItem('number_order_best_score',res.data.score)
-            break;
-          case 'dot-dodge':
-              localStorage.setItem('dot_dodge_best_score',res.data.score)
-            break;
-        
-          default:
-            break;
-        }
-      }
-      toast.add({
-        title: 'Submit Success',
-        description: 'Game score has been submitted.',
-        icon: 'i-lucide-circle-check',
-        color:'success',
-        progress: false
-      })
-    } catch (err) {
-      console.log(err)
-      toast.add({
-        title: 'Verification failed',
-        description: err.message,
-        icon: 'i-lucide-circle-alert',
-        color:'warning',
-        progress: false
-      })
+    })
+    return
+  }
+
+  // 已登录：提交后台
+  try {
+    const param = {
+      game_id: currentGameId.value,
+      score: score.value
     }
+    const res = await request.post('game-scores', param)
+    console.log(res)
+
+    toast.add({
+      title: 'Submit Success',
+      description: 'Game score has been submitted.',
+      icon: 'i-lucide-circle-check',
+      color: 'success',
+      progress: false
+    })
+  } catch (err) {
+    console.log(err)
+    toast.add({
+      title: 'Submission Failed',
+      description: err.message,
+      icon: 'i-lucide-circle-alert',
+      color: 'warning',
+      progress: false
+    })
   }
 }
 

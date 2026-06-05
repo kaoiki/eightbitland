@@ -173,8 +173,17 @@ const nickname = ref('') // 202404161851 用户昵称
 onMounted(() => {
   if (typeof window !== 'undefined') {
     loginStatus.value = window.localStorage.getItem('8bit_loginStatus') === 'true'
-    avatar.value = JSON.parse(localStorage.getItem('8bit_login_info')).avatar  // 202404161851 从localStorage读取头像
-    nickname.value = JSON.parse(localStorage.getItem('8bit_login_info')).nickname // 202404161851 从localStorage读取昵称
+
+    const infoRaw = localStorage.getItem('8bit_login_info')
+    if (infoRaw) {
+      try {
+        const info = JSON.parse(infoRaw)
+        avatar.value = info.avatar || ''
+        nickname.value = info.nickname || ''
+      } catch {
+        // JSON 解析失败，保持默认空值
+      }
+    }
   }
 })
 
