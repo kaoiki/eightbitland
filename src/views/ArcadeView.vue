@@ -29,8 +29,8 @@
   <UModal
     v-model:open="showLeaderboardModal"
     :ui="{
-      overlay: 'bg-black/70 backdrop-blur-sm',
-      content: 'border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
+      overlay: 'bg-black/70 backdrop-blur-sm z-[200]',
+      content: 'z-[200] border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
       header: 'border-b border-green-500/20 pb-3',
       title: 'text-lg font-bold tracking-widest text-green-400 uppercase',
       body: 'text-sm text-green-300/70 leading-relaxed py-4',
