@@ -24,6 +24,51 @@
       />
     </template>
   </GameLayout>
+
+  <!-- 未登录 → 引导登录/注册 -->
+  <UModal
+    v-model:open="showLeaderboardModal"
+    :ui="{
+      overlay: 'bg-black/70 backdrop-blur-sm',
+      content: 'border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
+      header: 'border-b border-green-500/20 pb-3',
+      title: 'text-lg font-bold tracking-widest text-green-400 uppercase',
+      body: 'text-sm text-green-300/70 leading-relaxed py-4',
+      footer: 'border-t border-green-500/20 pt-4 flex justify-end gap-3',
+      close: 'text-green-500/50 hover:text-green-300'
+    }"
+  >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-green-400">leaderboard</span>
+        Leaderboard Unavailable
+      </div>
+    </template>
+
+    <template #body>
+      <p>Login required to enter the leaderboard.</p>
+      <p class="mt-1 text-green-400/60">Your score is saved locally.</p>
+    </template>
+
+    <template #footer="{ close }">
+      <UButton
+        color="primary"
+        variant="solid"
+        class="bg-green-500 text-black font-bold tracking-widest uppercase rounded-none px-6 hover:bg-green-400"
+        @click="close(); router.push('/login')"
+      >
+        Login
+      </UButton>
+      <UButton
+        color="neutral"
+        variant="outline"
+        class="border-green-500 text-green-400 font-bold tracking-widest uppercase rounded-none px-6 hover:bg-green-500/10"
+        @click="close(); router.push('/register')"
+      >
+        Register
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup>
@@ -35,7 +80,6 @@ import { loadExternalGame } from '../games/runtime/loadExternalGame'
 
 import { request } from '../utils/request' //202604171435  引入request
 import { useToast } from '@nuxt/ui/composables' //202604171435 引入toast
-import Swal from 'sweetalert2' // 未登录弹窗引导
 import { useRouter } from 'vue-router'
 
 const toast = useToast() //202604171435 调用toast
@@ -62,6 +106,7 @@ const score = ref(0)
 const best = ref(0)
 const gameState = ref('idle')
 const gameInstance = ref(null)
+const showLeaderboardModal = ref(false)
 
 function handleRegisterGame(game) {
   gameInstance.value = game
@@ -106,23 +151,7 @@ async function handleGameOver(payload) {
   // 未登录：弹窗引导，不走网络
   const isLoggedIn = localStorage.getItem('8bit_loginStatus') === 'true'
   if (!isLoggedIn) {
-    Swal.fire({
-      title: 'Leaderboard Unavailable',
-      text: 'Login required to enter the leaderboard. Your score is saved locally.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#c2cf47',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Login',
-      cancelButtonText: 'Register',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        router.push('/login')
-      } else if (result.dismiss === Swal.DismissReason.cancel) {
-        router.push('/register')
-      }
-    })
+    showLeaderboardModal.value = true
     return
   }
 
