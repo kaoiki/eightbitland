@@ -13,6 +13,10 @@ const API = {
     'games':'/api/games',
     'leaderboard-init':'/api/leaderboard/init',
     'leaderboard':'api/leaderboard/{game_id}',
+    'profile-get':'/api/profile',
+    'profile-update':'/api/profile',
+    'password-change':'/api/auth/password/change',
+    'account-delete':'/api/account',
 } as const
 
 // 类型定义
@@ -99,8 +103,8 @@ export const request = {
     put<T = any>(urlKey: ApiKey, data?: any): Promise<T> {
       return service({ url: API[urlKey], method: 'put', data })
     },
-    delete<T = any>(urlKey: ApiKey, params?: any): Promise<T> {
-      return service({ url: API[urlKey], method: 'delete', params })
+    delete<T = any>(urlKey: ApiKey, data?: any): Promise<T> {
+      return service({ url: API[urlKey], method: 'delete', data })
     },
 }
   

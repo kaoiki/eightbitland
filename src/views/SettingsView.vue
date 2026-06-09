@@ -70,19 +70,21 @@
                 </p>
               </div>
               <button
-                class="bg-[var(--color-primary)] px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--color-on-primary)] transition hover:brightness-110 active:translate-y-0.5"
+                class="bg-[var(--color-primary)] px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-[var(--color-on-primary)] transition hover:brightness-110 active:translate-y-0.5 disabled:opacity-50"
+                :disabled="profileSaving"
+                @click="saveProfile"
               >
-                Save
+                {{ profileSaving ? 'Saving...' : 'Save' }}
               </button>
             </div>
 
             <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
               <label class="space-y-2">
                 <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--color-outline-variant)]">
-                  Username
+                  Nickname
                 </span>
                 <input
-                  v-model="profile.username"
+                  v-model="profile.nickname"
                   type="text"
                   class="w-full border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container-lowest)] px-4 py-3 text-sm outline-none transition focus:border-[var(--color-primary)]"
                 />
@@ -92,11 +94,15 @@
                 <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--color-outline-variant)]">
                   Email
                 </span>
-                <input
-                  v-model="profile.email"
-                  type="email"
-                  class="w-full border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container-lowest)] px-4 py-3 text-sm outline-none transition focus:border-[var(--color-primary)]"
-                />
+                <div class="flex items-center gap-2">
+                  <input
+                    :value="profile.email"
+                    type="email"
+                    readonly
+                    class="w-full cursor-not-allowed border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container-lowest)] px-4 py-3 text-sm text-[var(--color-on-surface-variant)] outline-none opacity-60"
+                  />
+                  <span class="material-symbols-outlined text-sm text-green-500">verified</span>
+                </div>
               </label>
 
               <label class="space-y-2 md:col-span-2">
@@ -162,9 +168,40 @@
                   Password must be at least 8 characters.
                 </p>
                 <button
-                  class="bg-[var(--color-primary)] px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--color-on-primary)] transition hover:brightness-110 active:translate-y-0.5"
+                  class="bg-[var(--color-primary)] px-5 py-3 text-xs font-black uppercase tracking-[0.2em] text-[var(--color-on-primary)] transition hover:brightness-110 active:translate-y-0.5 disabled:opacity-50"
+                  :disabled="passwordUpdating"
+                  @click="updatePassword"
                 >
-                  Update Password
+                  {{ passwordUpdating ? 'Updating...' : 'Update Password' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Linked Accounts -->
+          <div class="border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-8">
+            <div class="mb-8">
+              <p class="text-xs font-black uppercase tracking-[0.3em] text-[var(--color-primary)]">
+                Linked Accounts
+              </p>
+              <p class="mt-2 text-xs uppercase text-[var(--color-outline-variant)]">
+                Connect your social accounts for easy login
+              </p>
+            </div>
+
+            <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-[rgba(66,73,78,0.12)] pb-4">
+                <div class="flex items-center gap-3">
+                  <span class="material-symbols-outlined text-lg text-[var(--color-outline)]">login</span>
+                  <div>
+                    <p class="text-sm font-bold uppercase">Google</p>
+                    <p class="mt-0.5 text-xs text-[var(--color-on-surface-variant)]">Sign in with Google</p>
+                  </div>
+                </div>
+                <button
+                  class="border border-[rgba(66,73,78,0.3)] bg-[var(--color-surface-container-low)] px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 transition hover:bg-[var(--color-surface-container-high)] hover:text-[var(--color-primary)]"
+                >
+                  Bind
                 </button>
               </div>
             </div>
@@ -251,19 +288,19 @@
             <ul class="space-y-5">
               <li class="flex items-end justify-between">
                 <span class="text-[10px] uppercase text-[var(--color-outline-variant)]">Last Login</span>
-                <span class="text-xs font-bold uppercase">Today</span>
+                <span class="text-xs font-bold uppercase">Recorded</span>
               </li>
               <li class="flex items-end justify-between">
                 <span class="text-[10px] uppercase text-[var(--color-outline-variant)]">Password</span>
-                <span class="text-xs font-bold uppercase">Updated 18d ago</span>
+                <span class="text-xs font-bold uppercase">Enabled</span>
               </li>
               <li class="flex items-end justify-between">
-                <span class="text-[10px] uppercase text-[var(--color-outline-variant)]">Sessions</span>
-                <span class="text-xs font-bold uppercase">2 Active</span>
+                <span class="text-[10px] uppercase text-[var(--color-outline-variant)]">Active Session</span>
+                <span class="text-xs font-bold uppercase">Current</span>
               </li>
               <li class="flex items-end justify-between">
                 <span class="text-[10px] uppercase text-[var(--color-outline-variant)]">Protection</span>
-                <span class="text-xs font-bold uppercase text-[var(--color-primary)]">Normal</span>
+                <span class="text-xs font-bold uppercase text-[var(--color-primary)]">Standard</span>
               </li>
             </ul>
           </div>
@@ -276,13 +313,8 @@
 
             <div class="space-y-4">
               <button
-                class="w-full border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container-low)] px-4 py-3 text-xs font-black uppercase tracking-[0.2em] transition hover:bg-[var(--color-surface-container-high)]"
-              >
-                Log Out All Devices
-              </button>
-
-              <button
                 class="w-full border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-black uppercase tracking-[0.2em] text-red-400 transition hover:bg-red-500/20"
+                @click="showDeleteModal = true"
               >
                 Delete Account
               </button>
@@ -292,13 +324,75 @@
       </section>
     </div>
   </div>
+
+  <!-- Delete Account 确认弹窗 -->
+  <UModal
+    v-model:open="showDeleteModal"
+    :ui="{
+      overlay: 'bg-black/70 backdrop-blur-sm z-[10000]',
+      content: 'z-[10001] border-2 border-red-500 bg-black shadow-[0_0_30px_rgba(239,68,68,0.15)] rounded-none',
+      header: 'border-b border-red-500/20 pb-3',
+      title: 'text-lg font-bold tracking-widest text-red-400 uppercase',
+      body: 'text-sm text-red-300/70 leading-relaxed py-4',
+      footer: 'border-t border-red-500/20 pt-4 flex justify-end gap-3',
+      close: 'text-red-500/50 hover:text-red-300'
+    }"
+  >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-red-400">warning</span>
+        Delete Account
+      </div>
+    </template>
+
+    <template #body>
+      <p>This action is irreversible. Your account will be deactivated and all data will be kept but inaccessible.</p>
+      <div class="mt-4">
+        <label class="space-y-2">
+          <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--color-outline-variant)]">
+            Enter your password to confirm
+          </span>
+          <input
+            v-model="deletePassword"
+            type="password"
+            placeholder="••••••••"
+            class="w-full border border-red-500/30 bg-[var(--color-surface-container-lowest)] px-4 py-3 text-sm outline-none transition focus:border-red-500"
+          />
+        </label>
+      </div>
+    </template>
+
+    <template #footer="{ close }">
+      <UButton
+        color="neutral"
+        variant="outline"
+        class="border-slate-500 text-slate-400 font-bold tracking-widest uppercase rounded-none px-6 hover:bg-slate-500/10"
+        :disabled="deleting"
+        @click="close(); deletePassword = ''"
+      >
+        Cancel
+      </UButton>
+      <UButton
+        color="primary"
+        variant="solid"
+        class="bg-red-500 text-black font-bold tracking-widest uppercase rounded-none px-6 hover:bg-red-400 disabled:opacity-50"
+        :disabled="deleting"
+        @click="confirmDelete"
+      >
+        {{ deleting ? 'Deleting...' : 'Confirm Delete' }}
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { request } from '../utils/request'
+import { useToast } from '@nuxt/ui/composables'
 
 const router = useRouter()
+const toast = useToast()
 
 const isLogin = computed(() => {
   return localStorage.getItem('8bit_loginStatus') === 'true'
@@ -311,22 +405,158 @@ function goLogin() {
 const overviewStats = [
   { label: 'Account', value: 'Active' },
   { label: 'Security', value: 'Normal' },
-  { label: 'Sessions', value: '02' },
+  { label: 'Sessions', value: '01' },
   { label: 'Plan', value: 'Free' }
 ]
 
+// ========================
+// Profile
+// ========================
 const profile = reactive({
-  username: 'PlayerOne',
-  email: 'player@example.com',
-  bio: 'Arcade explorer. Chasing high scores across every stage.'
+  nickname: '',
+  email: '',
+  bio: ''
 })
 
+const profileSaving = ref(false)
+
+onMounted(async () => {
+  // 从本地先读一份
+  const raw = localStorage.getItem('8bit_login_info')
+  if (raw) {
+    try {
+      const info = JSON.parse(raw)
+      profile.nickname = info.nickname || ''
+      profile.email = info.email || ''
+      profile.bio = info.bio || ''
+    } catch {}
+  }
+
+  // 再从 API 拉最新资料
+  try {
+    const res = await request.get('profile-get')
+    if (res?.data) {
+      profile.nickname = res.data.nickname || profile.nickname
+      profile.bio = res.data.bio || profile.bio
+    }
+  } catch {
+    // API 失败时保留本地数据，用户仍然可以手动保存
+  }
+})
+
+async function saveProfile() {
+  if (!profile.nickname.trim()) {
+    toast.add({ title: 'Validation', description: 'Nickname cannot be empty.', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+    return
+  }
+
+  profileSaving.value = true
+  try {
+    const res = await request.put('profile-update', {
+      nickname: profile.nickname.trim(),
+      bio: profile.bio.trim()
+    })
+
+    // 同步本地缓存
+    const raw = localStorage.getItem('8bit_login_info')
+    if (raw) {
+      try {
+        const info = JSON.parse(raw)
+        info.nickname = res.data.nickname || profile.nickname
+        localStorage.setItem('8bit_login_info', JSON.stringify(info))
+      } catch {}
+    }
+
+    toast.add({ title: 'Profile Updated', description: 'Your profile has been saved.', icon: 'i-lucide-circle-check', color: 'success', progress: false })
+  } catch (err: any) {
+    toast.add({ title: 'Update Failed', description: err?.msg || err?.message || 'Network error', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+  } finally {
+    profileSaving.value = false
+  }
+}
+
+// ========================
+// Change Password
+// ========================
 const passwordForm = reactive({
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
 
+const passwordUpdating = ref(false)
+
+async function updatePassword() {
+  // 表单验证
+  if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    toast.add({ title: 'Validation', description: 'All password fields are required.', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+    return
+  }
+  if (passwordForm.newPassword.length < 8) {
+    toast.add({ title: 'Validation', description: 'New password must be at least 8 characters.', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+    return
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    toast.add({ title: 'Validation', description: 'New password and confirm do not match.', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+    return
+  }
+
+  passwordUpdating.value = true
+  try {
+    await request.put('password-change', {
+      current_password: passwordForm.currentPassword,
+      new_password: passwordForm.newPassword
+    })
+
+    // 清空表单
+    passwordForm.currentPassword = ''
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+
+    toast.add({ title: 'Password Updated', description: 'Your password has been changed successfully.', icon: 'i-lucide-circle-check', color: 'success', progress: false })
+  } catch (err: any) {
+    toast.add({ title: 'Update Failed', description: err?.msg || err?.message || 'Network error', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+  } finally {
+    passwordUpdating.value = false
+  }
+}
+
+// ========================
+// Delete Account
+// ========================
+const showDeleteModal = ref(false)
+const deletePassword = ref('')
+const deleting = ref(false)
+
+async function confirmDelete() {
+  if (!deletePassword.value) {
+    toast.add({ title: 'Validation', description: 'Please enter your password to confirm.', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+    return
+  }
+
+  deleting.value = true
+  try {
+    await request.delete('account-delete', { password: deletePassword.value })
+
+    // 清除本地数据
+    localStorage.removeItem('8bit_token')
+    localStorage.removeItem('8bit_login_info')
+    localStorage.removeItem('8bit_loginStatus')
+
+    showDeleteModal.value = false
+    toast.add({ title: 'Account Deactivated', description: 'Your account has been deactivated.', icon: 'i-lucide-circle-check', color: 'success', progress: false })
+
+    setTimeout(() => router.push('/'), 1500)
+  } catch (err: any) {
+    toast.add({ title: 'Delete Failed', description: err?.msg || err?.message || 'Network error', icon: 'i-lucide-circle-alert', color: 'warning', progress: false })
+  } finally {
+    deleting.value = false
+  }
+}
+
+// ========================
+// Preferences
+// ========================
 const preferences = ref([
   {
     key: 'email-notify',
