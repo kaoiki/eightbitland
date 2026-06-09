@@ -200,7 +200,7 @@
                 </div>
                 <button
                   class="border border-[rgba(66,73,78,0.3)] bg-[var(--color-surface-container-low)] px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 transition hover:bg-[var(--color-surface-container-high)] hover:text-[var(--color-primary)]"
-                  @click="toast.add({ title: 'Coming Soon', description: 'Google login integration is not available yet.', icon: 'i-lucide-clock', color: 'neutral', progress: false })"
+                  @click="showComingSoonModal = true"
                 >
                   Bind
                 </button>
@@ -325,6 +325,43 @@
       </section>
     </div>
   </div>
+
+  <!-- Google Bind Coming Soon 弹窗 -->
+  <UModal
+    v-model:open="showComingSoonModal"
+    :ui="{
+      overlay: 'bg-black/70 backdrop-blur-sm z-[10000]',
+      content: 'z-[10001] border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
+      header: 'border-b border-green-500/20 pb-3',
+      title: 'text-lg font-bold tracking-widest text-green-400 uppercase',
+      body: 'text-sm text-green-300/70 leading-relaxed py-4 text-center',
+      footer: 'border-t border-green-500/20 pt-4 flex justify-center',
+      close: 'text-green-500/50 hover:text-green-300'
+    }"
+  >
+    <template #title>
+      <div class="flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-green-400">construction</span>
+        Coming Soon
+      </div>
+    </template>
+
+    <template #body>
+      <p>Google login integration is not available yet.</p>
+      <p class="mt-1 text-green-400/60">Stay tuned for future updates.</p>
+    </template>
+
+    <template #footer="{ close }">
+      <UButton
+        color="primary"
+        variant="solid"
+        class="bg-green-500 text-black font-bold tracking-widest uppercase rounded-none px-8 hover:bg-green-400"
+        @click="close()"
+      >
+        Got it
+      </UButton>
+    </template>
+  </UModal>
 
   <!-- Delete Account 确认弹窗 -->
   <UModal
@@ -525,6 +562,7 @@ async function updatePassword() {
 // ========================
 // Delete Account
 // ========================
+const showComingSoonModal = ref(false)
 const showDeleteModal = ref(false)
 const deletePassword = ref('')
 const deleting = ref(false)
