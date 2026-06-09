@@ -215,7 +215,7 @@
                 Preferences
               </p>
               <p class="mt-2 text-xs uppercase text-[var(--color-outline-variant)]">
-                Personalize your arcade experience
+                Personalize your arcade experience — Experimental
               </p>
             </div>
 
