@@ -200,6 +200,7 @@
                 </div>
                 <button
                   class="border border-[rgba(66,73,78,0.3)] bg-[var(--color-surface-container-low)] px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-300 transition hover:bg-[var(--color-surface-container-high)] hover:text-[var(--color-primary)]"
+                  @click="toast.add({ title: 'Coming Soon', description: 'Google login integration is not available yet.', icon: 'i-lucide-clock', color: 'neutral', progress: false })"
                 >
                   Bind
                 </button>
