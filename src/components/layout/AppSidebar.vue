@@ -85,18 +85,18 @@
           :key="item.label"
           :to="item.to"
           @click="handleNavClick"
-          class="flex w-full items-center gap-4 p-4 text-sm uppercase tracking-widest transition-colors"
+          class="flex w-full items-center gap-4 border-l-4 p-4 text-sm uppercase tracking-widest transition-colors"
           :class="
             isActive(item.to)
-              ? 'border-l-4 border-[var(--color-primary)] bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]'
-              : 'text-slate-400 hover:bg-[var(--color-surface-container-low)] hover:text-white'
+              ? 'border-[var(--color-primary)] bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]'
+              : 'border-transparent text-slate-400 hover:bg-[var(--color-surface-container-low)] hover:text-white'
           "
         >
           <span class="material-symbols-outlined">{{ item.icon }}</span>
           <span class="flex-1">{{ item.label }}</span>
           <span
             v-if="item.badge"
-            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]"
+            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] leading-none"
           >
             {{ item.badge }}
           </span>
@@ -111,18 +111,18 @@
           :key="item.label"
           :to="item.to"
           @click="handleNavClick"
-          class="flex w-full items-center gap-4 p-4 text-sm uppercase tracking-widest transition-colors"
+          class="flex w-full items-center gap-4 border-l-4 p-4 text-sm uppercase tracking-widest transition-colors"
           :class="
             isActive(item.to)
-              ? 'border-l-4 border-[var(--color-primary)] bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]'
-              : 'text-slate-400 hover:bg-[var(--color-surface-container-low)] hover:text-white'
+              ? 'border-[var(--color-primary)] bg-[var(--color-surface-container-highest)] text-[var(--color-primary)]'
+              : 'border-transparent text-slate-400 hover:bg-[var(--color-surface-container-low)] hover:text-white'
           "
         >
           <span class="material-symbols-outlined">{{ item.icon }}</span>
           <span class="flex-1">{{ item.label }}</span>
           <span
             v-if="item.badge"
-            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]"
+            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] leading-none"
           >
             {{ item.badge }}
           </span>
