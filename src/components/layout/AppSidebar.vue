@@ -154,7 +154,7 @@ const router = useRouter()
 const primaryItems = [
   { label: 'Home', icon: 'home', to: '/' },
   { label: 'Leaderboard', icon: 'leaderboard', to: '/leaderboard' },
-  { label: 'Achievement', icon: 'emoji_events', to: '/achievement' },//202604091703 配置菜单
+  { label: 'Achievement', icon: 'emoji_events', to: '/achievement', badge: 'Soon' },
 ]
 
 const secondaryItems = [
