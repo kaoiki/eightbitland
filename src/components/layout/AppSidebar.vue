@@ -113,7 +113,13 @@
           "
         >
           <span class="material-symbols-outlined">{{ item.icon }}</span>
-          {{ item.label }}
+          <span class="flex-1">{{ item.label }}</span>
+          <span
+            v-if="item.badge"
+            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]"
+          >
+            {{ item.badge }}
+          </span>
         </RouterLink>
       </nav>
     </div>
@@ -153,10 +159,10 @@ const primaryItems = [
 
 const secondaryItems = [
   { label: 'Arcade', icon: 'sports_esports', to: '/arcade' },
-  { label: 'Battle', icon: 'swords', to: '/battle' },
-  { label: 'Activity', icon: 'local_activity', to: '/activity' }, //202604091703 配置菜单
-  { label: 'Shop', icon: 'store', to: '/shop' }, //202604091703 配置菜单
-  { label: 'Market', icon: 'storefront', to: '/market' },
+  { label: 'Battle', icon: 'swords', to: '/battle', badge: 'Soon' },
+  { label: 'Activity', icon: 'local_activity', to: '/activity', badge: 'Soon' },
+  { label: 'Shop', icon: 'store', to: '/shop', badge: 'Soon' },
+  { label: 'Market', icon: 'storefront', to: '/market', badge: 'Soon' },
   { label: 'Settings', icon: 'settings', to: '/settings' }
 ]
 
