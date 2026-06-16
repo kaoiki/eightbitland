@@ -96,7 +96,7 @@
           <span class="flex-1">{{ item.label }}</span>
           <span
             v-if="item.badge"
-            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] leading-none"
+            class="ml-auto text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]/60"
           >
             {{ item.badge }}
           </span>
@@ -122,7 +122,7 @@
           <span class="flex-1">{{ item.label }}</span>
           <span
             v-if="item.badge"
-            class="rounded-sm border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)] leading-none"
+            class="ml-auto text-[9px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]/60"
           >
             {{ item.badge }}
           </span>
