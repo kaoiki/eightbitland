@@ -12,7 +12,7 @@
   >
     <div class="p-8">
       <div class="mb-8 text-2xl font-black uppercase tracking-widest text-[var(--color-primary)]">
-        WarioPulse
+        EightBitLand
       </div>
 
       <!-- Logged In -->
