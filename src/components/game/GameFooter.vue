@@ -5,26 +5,24 @@
       <span>Best: {{ best }}</span>
     </div>
 
-    <div class="flex items-center gap-1.5">
+    <div class="flex gap-1.5 sm:gap-2">
       <button
-        class="flex h-7 w-7 items-center justify-center border border-green-500/30 text-sm text-green-500/50 transition hover:border-green-400 hover:text-green-300"
-        :class="{ 'border-green-400 text-green-300': liked }"
-        @click="toggleLike"
-        title="Like"
+        class="border border-green-400 px-2 sm:px-3 py-1 text-sm hover:bg-green-400 hover:text-black disabled:opacity-50"
+        :disabled="sending"
+        @click="submitFeedback('like')"
       >
-        <span class="material-symbols-outlined text-sm">thumb_up</span>
+        Like
       </button>
 
       <button
-        class="flex h-7 w-7 items-center justify-center border border-green-500/30 text-sm text-green-500/50 transition hover:border-green-400 hover:text-green-300"
-        :class="{ 'border-green-400 text-green-300': disliked }"
-        @click="toggleDislike"
-        title="Dislike"
+        class="border border-green-400 px-2 sm:px-3 py-1 text-sm hover:bg-green-400 hover:text-black disabled:opacity-50"
+        :disabled="sending"
+        @click="submitFeedback('dislike')"
       >
-        <span class="material-symbols-outlined text-sm">thumb_down</span>
+        Dislike
       </button>
 
-      <div class="mx-1 h-5 w-px bg-green-500/20"></div>
+      <div class="mx-0.5 self-stretch w-px bg-green-500/20"></div>
 
       <button
         class="border border-green-400 px-3 py-1 text-sm hover:bg-green-400 hover:text-black"
@@ -45,8 +43,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { request } from '../../utils/request'
+import { useToast } from '@nuxt/ui/composables'
 
-defineProps({
+const props = defineProps({
   score: {
     type: Number,
     default: 0
@@ -58,19 +58,38 @@ defineProps({
   gameState: {
     type: String,
     default: 'idle'
+  },
+  gameId: {
+    type: String,
+    default: ''
   }
 })
 
 defineEmits(['start', 'reset'])
 
-const liked = ref(false)
-const disliked = ref(false)
+const toast = useToast()
+const sending = ref(false)
 
-function toggleLike() {
-  liked.value = !liked.value
-}
+async function submitFeedback(type) {
+  if (!props.gameId || sending.value) return
 
-function toggleDislike() {
-  disliked.value = !disliked.value
+  sending.value = true
+  try {
+    await request.post('game-feedback', {
+      game_id: props.gameId,
+      type: type
+    })
+    toast.add({
+      title: type === 'like' ? 'Thanks!' : 'Noted!',
+      description: type === 'like' ? 'Glad you enjoy this game.' : "We'll take a look.",
+      icon: type === 'like' ? 'i-lucide-smile' : 'i-lucide-frown',
+      color: 'success',
+      progress: false
+    })
+  } catch {
+    // 静默失败
+  } finally {
+    sending.value = false
+  }
 }
 </script>

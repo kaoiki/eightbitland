@@ -19,6 +19,7 @@
         :score="score"
         :best="best"
         :game-state="gameState"
+        :game-id="currentGameId"
         @start="$emit('start')"
         @reset="$emit('reset')"
       />
