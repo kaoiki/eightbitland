@@ -53,7 +53,7 @@ service.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
-    config.headers['X-App-Code'] = '8bit' // 你的应用编码
+    config.headers['X-App-Code'] = import.meta.env.VITE_APP_CODE || '8bit'
 
     return config
   },
