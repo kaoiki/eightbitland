@@ -33,7 +33,7 @@
     </section>
 
     <!-- Live Features -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <router-link
         v-for="item in liveFeatures"
         :key="item.to"
@@ -64,7 +64,7 @@
     </div>
 
     <!-- Coming Soon -->
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <div
         v-for="item in soonFeatures"
         :key="item.to"
@@ -103,6 +103,13 @@ const liveFeatures = [
     desc: 'See how you stack up against other players across every game mode.'
   },
   {
+    label: 'Market',
+    subtitle: 'Game Library',
+    icon: 'storefront',
+    to: '/market',
+    desc: 'Browse the full game library with descriptions, ratings, and scores. Players can upload their own game scripts.'
+  },
+  {
     label: 'Settings',
     subtitle: 'Account',
     icon: 'settings',
@@ -139,13 +146,6 @@ const soonFeatures = [
     icon: 'store',
     to: '/shop',
     desc: 'Browse exclusive cosmetics, frame skins, and power-ups.'
-  },
-  {
-    label: 'Market',
-    subtitle: 'Player Trading',
-    icon: 'storefront',
-    to: '/market',
-    desc: 'A peer-to-peer marketplace for trading items and collectibles.'
   }
 ]
 </script>

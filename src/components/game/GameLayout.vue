@@ -2,6 +2,7 @@
   <div class="h-screen w-full bg-black text-green-400 flex justify-center px-4 overflow-hidden">
     <div class="w-full max-w-[420px] h-screen flex flex-col items-center justify-center">
       <GameHeader
+        :back-url="backUrl"
         :game-meta="gameMeta"
         :game-count="gameCount"
         :game-options="gameOptions"
@@ -32,6 +33,10 @@ import GameHeader from './GameHeader.vue'
 import GameFooter from './GameFooter.vue'
 
 defineProps({
+  backUrl: {
+    type: String,
+    default: '/'
+  },
   score: {
     type: Number,
     default: 0

@@ -1,5 +1,6 @@
 <template>
   <GameLayout
+    :back-url="backUrl"
     :score="score"
     :best="best"
     :game-state="gameState"
@@ -80,10 +81,11 @@ import { loadExternalGame } from '../games/runtime/loadExternalGame'
 
 import { request } from '../utils/request' //202604171435  引入request
 import { useToast } from '@nuxt/ui/composables' //202604171435 引入toast
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const toast = useToast() //202604171435 调用toast
 const router = useRouter()
+const route = useRoute()
 
 const currentGameId = ref('retro-dodge')
 const currentGame = computed(() => gameRegistry[currentGameId.value] || null)
@@ -107,6 +109,9 @@ const best = ref(0)
 const gameState = ref('idle')
 const gameInstance = ref(null)
 const showLeaderboardModal = ref(false)
+
+// 从 Market ?game=xxx 过来的，返回去 Market，否则回首页
+const backUrl = computed(() => route.query.game ? '/market' : '/')
 
 function handleRegisterGame(game) {
   gameInstance.value = game
@@ -266,6 +271,12 @@ onMounted(async () => {
     }
 
     availableGameIds.value = Object.keys(gameRegistry)
+
+    // 如果从 Market 点了某款游戏过来，自动切换
+    const targetGame = route.query.game
+    if (typeof targetGame === 'string' && gameRegistry[targetGame]) {
+      switchGame(targetGame)
+    }
   } catch (error) {
     console.error('[ExternalGame] failed to load games.json:', error)
   }

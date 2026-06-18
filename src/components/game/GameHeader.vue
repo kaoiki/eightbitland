@@ -52,7 +52,7 @@
 
     <!-- 返回菜单 -->
     <button
-      @click="router.push('/')"
+      @click="router.push(backUrl)"
       class="flex h-[42px] w-[42px] items-center justify-center border border-green-400 text-green-300 transition-all duration-150 hover:bg-green-400/10 hover:text-green-200 active:scale-90"
     >
       <span class="text-xl font-bold leading-none">←</span>
@@ -67,6 +67,10 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const props = defineProps({
+  backUrl: {
+    type: String,
+    default: '/'
+  },
   gameMeta: {
     type: Object,
     default: () => ({})

@@ -17,6 +17,8 @@ const API = {
     'profile-update':'/api/profile',
     'password-change':'/api/auth/password/change',
     'account-delete':'/api/account',
+    'game-feedback':'/api/game-feedback',
+    'game-feedback-stats':'/api/game-feedback/stats',
 } as const
 
 // 类型定义

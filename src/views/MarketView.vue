@@ -10,7 +10,7 @@
           Market
         </h1>
         <p class="mt-4 max-w-2xl text-sm leading-6 text-[var(--color-on-surface-variant)]">
-          Browse all available games, check descriptions, and jump straight into the action.
+          Explore the full game library, check descriptions, ratings, and jump straight into the action. Players can also upload their own game scripts.
         </p>
       </div>
 
@@ -34,12 +34,23 @@
       </div>
     </section>
 
+    <!-- Upload -->
+    <div class="flex justify-end">
+      <button
+        class="flex items-center gap-2 border border-[var(--color-primary)] bg-[var(--color-surface-container)] px-5 py-3 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
+        @click="handleUploadClick"
+      >
+        <span class="material-symbols-outlined text-sm">upload</span>
+        Upload Your Game
+      </button>
+    </div>
+
     <!-- Game Grid -->
     <section class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
       <div
         v-for="game in games"
         :key="game.id"
-        class="group border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-6 transition-colors hover:bg-[var(--color-surface-container-high)]"
+        class="group flex flex-col border border-[rgba(66,73,78,0.2)] bg-[var(--color-surface-container)] p-6 transition-colors hover:bg-[var(--color-surface-container-high)]"
       >
         <div class="mb-4 flex items-start justify-between gap-4">
           <div>
@@ -56,18 +67,31 @@
           <span class="material-symbols-outlined text-3xl text-[var(--color-primary)]">{{ game.icon }}</span>
         </div>
 
-        <p class="mb-4 text-sm leading-6 text-[var(--color-on-surface-variant)]">
-          {{ game.description }}
-        </p>
+        <div class="min-h-[40px]">
+          <p class="text-sm leading-5 text-[var(--color-on-surface-variant)] line-clamp-2">
+            {{ game.description }}
+          </p>
+        </div>
 
-        <div class="mb-4 flex items-center justify-between border-t border-[rgba(66,73,78,0.12)] pt-4">
+        <div class="mt-3 mb-3 flex items-center gap-3 text-xs">
+          <span class="flex items-center gap-px text-[11px] text-[var(--color-primary)]/60">
+            <span class="material-symbols-outlined" style="font-size: 11px;">thumb_up</span>
+            {{ game.likeCount }}
+          </span>
+          <span class="flex items-center gap-px text-[11px] text-[var(--color-primary)]/60">
+            <span class="material-symbols-outlined" style="font-size: 11px;">thumb_down</span>
+            {{ game.dislikeCount }}
+          </span>
+        </div>
+
+        <div class="flex items-center justify-between border-t border-[rgba(66,73,78,0.12)] pt-4">
           <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--color-outline-variant)]">Your Best Score</span>
           <span class="text-sm font-bold text-[var(--color-primary)]">{{ game.bestScore }}</span>
         </div>
 
         <router-link
-          :to="'/arcade'"
-          class="flex items-center justify-center gap-2 border border-[var(--color-primary)] py-2 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
+          :to="{ path: '/arcade', query: { game: game.id } }"
+          class="mt-4 flex items-center justify-center gap-2 border border-[var(--color-primary)] py-2 text-xs font-bold uppercase tracking-widest text-[var(--color-primary)] transition hover:bg-[var(--color-primary)] hover:text-[var(--color-on-primary)]"
         >
           Play Now
           <span class="material-symbols-outlined text-sm">chevron_right</span>
@@ -75,12 +99,95 @@
       </div>
     </section>
   </div>
+
+  <!-- 未登录引导 -->
+  <UModal
+    v-model:open="showLoginPrompt"
+    :ui="{
+      overlay: 'bg-black/70 backdrop-blur-sm z-[10000]',
+      content: 'z-[10001] border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
+      header: 'border-b border-green-500/20 pb-3',
+      title: 'text-lg font-bold tracking-widest text-green-400 uppercase',
+      body: 'text-sm text-green-300/70 leading-relaxed py-4',
+      footer: 'border-t border-green-500/20 pt-4 flex justify-end gap-3',
+      close: 'text-green-500/50 hover:text-green-300'
+    }"
+  >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-green-400">login</span>
+        Login Required
+      </div>
+    </template>
+
+    <template #body>
+      <p>You need to log in or register to upload your own game.</p>
+    </template>
+
+    <template #footer="{ close }">
+      <UButton
+        color="primary"
+        variant="solid"
+        class="bg-green-500 text-black font-bold tracking-widest uppercase rounded-none px-6 hover:bg-green-400"
+        @click="close(); router.push('/login')"
+      >
+        Login
+      </UButton>
+      <UButton
+        color="neutral"
+        variant="outline"
+        class="border-green-500 text-green-400 font-bold tracking-widest uppercase rounded-none px-6 hover:bg-green-500/10"
+        @click="close(); router.push('/register')"
+      >
+        Register
+      </UButton>
+    </template>
+  </UModal>
+
+  <!-- Upload Coming Soon -->
+  <UModal
+    v-model:open="showUploadModal"
+    :ui="{
+      overlay: 'bg-black/70 backdrop-blur-sm z-[10000]',
+      content: 'z-[10001] border-2 border-green-500 bg-black shadow-[0_0_30px_rgba(74,222,128,0.15)] rounded-none',
+      header: 'border-b border-green-500/20 pb-3',
+      title: 'text-lg font-bold tracking-widest text-green-400 uppercase',
+      body: 'text-sm text-green-300/70 leading-relaxed py-4 text-center',
+      footer: 'border-t border-green-500/20 pt-4 flex justify-center',
+      close: 'text-green-500/50 hover:text-green-300'
+    }"
+  >
+    <template #title>
+      <div class="flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-green-400">construction</span>
+        Coming Soon
+      </div>
+    </template>
+
+    <template #body>
+      <p>Game upload is not available yet.</p>
+      <p class="mt-1 text-green-400/60">You will be able to submit your own game scripts here.</p>
+    </template>
+
+    <template #footer="{ close }">
+      <UButton
+        color="primary"
+        variant="solid"
+        class="bg-green-500 text-black font-bold tracking-widest uppercase rounded-none px-8 hover:bg-green-400"
+        @click="close()"
+      >
+        Got it
+      </UButton>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { gameRegistry } from '../games/runtime/gameRegistry'
 import { loadExternalGame } from '../games/runtime/loadExternalGame'
+import { request } from '../utils/request'
+import { useRouter } from 'vue-router'
 
 interface GameItem {
   id: string
@@ -89,6 +196,8 @@ interface GameItem {
   source: string
   bestScore: string
   icon: string
+  likeCount: number
+  dislikeCount: number
 }
 
 const scoreKeyMap: Record<string, string> = {
@@ -106,19 +215,22 @@ const iconMap: Record<string, string> = {
   'retro-dodge': 'grid_view',
   'click-rush': 'touch_app',
   'color-blitz': 'palette',
-  'lane-shot': 'crosshair',
+  'lane-shot': 'my_location',
   'stack-rift': 'layers',
   'dot-dodge': 'radio_button_unchecked',
 }
 
 function getBestScore(gameId: string): string {
+  const isLoggedIn = localStorage.getItem('8bit_loginStatus') === 'true'
+  if (!isLoggedIn) return '0'
+
   const key = scoreKeyMap[gameId]
-  if (!key) return '—'
+  if (!key) return '0'
   try {
     const val = Number(localStorage.getItem(key) || 0)
-    return val > 0 ? val.toLocaleString() : '—'
+    return val > 0 ? val.toLocaleString() : '0'
   } catch {
-    return '—'
+    return '0'
   }
 }
 
@@ -130,8 +242,21 @@ const games = ref<GameItem[]>([])
 const platforms = ref(0)
 const externals = ref(0)
 const myBestCount = ref(0)
+const router = useRouter()
+const showUploadModal = ref(false)
+const showLoginPrompt = ref(false)
+
+function handleUploadClick() {
+  const isLoggedIn = localStorage.getItem('8bit_loginStatus') === 'true'
+  if (!isLoggedIn) {
+    showLoginPrompt.value = true
+  } else {
+    showUploadModal.value = true
+  }
+}
 
 onMounted(async () => {
+  const isLoggedIn = localStorage.getItem('8bit_loginStatus') === 'true'
   const all: GameItem[] = []
   let platCount = 0
   let extCount = 0
@@ -148,9 +273,11 @@ onMounted(async () => {
       source: 'platform',
       bestScore: getBestScore(id),
       icon: getIcon(id),
+      likeCount: 0,
+      dislikeCount: 0,
     })
     platCount++
-    if (scoreKeyMap[id] && Number(localStorage.getItem(scoreKeyMap[id]) || 0) > 0) scoredCount++
+    if (isLoggedIn && scoreKeyMap[id] && Number(localStorage.getItem(scoreKeyMap[id]) || 0) > 0) scoredCount++
   }
 
   // 2) 外部游戏
@@ -173,9 +300,11 @@ onMounted(async () => {
           source: 'external',
           bestScore: getBestScore(gid),
           icon: getIcon(gid),
+          likeCount: 0,
+          dislikeCount: 0,
         })
         extCount++
-        if (scoreKeyMap[gid] && Number(localStorage.getItem(scoreKeyMap[gid]) || 0) > 0) scoredCount++
+        if (isLoggedIn && scoreKeyMap[gid] && Number(localStorage.getItem(scoreKeyMap[gid]) || 0) > 0) scoredCount++
       }
     }
   } catch {}
@@ -184,5 +313,20 @@ onMounted(async () => {
   platforms.value = platCount
   externals.value = extCount
   myBestCount.value = scoredCount
+
+  // 3) 获取 like/dislike 统计
+  try {
+    const res = await request.get('game-feedback-stats')
+    const stats = res?.data || {}
+    for (const game of games.value) {
+      const s = stats[game.id]
+      if (s) {
+        game.likeCount = s.like ?? 0
+        game.dislikeCount = s.dislike ?? 0
+      }
+    }
+  } catch {
+    // 失败时保留 0
+  }
 })
 </script>
