@@ -106,8 +106,8 @@ const iconMap: Record<string, string> = {
   'retro-dodge': 'grid_view',
   'click-rush': 'touch_app',
   'color-blitz': 'palette',
-  'lane-shot': 'trackpad_radar',
-  'stack-rift': 'layer_intersect',
+  'lane-shot': 'crosshair',
+  'stack-rift': 'layers',
   'dot-dodge': 'radio_button_unchecked',
 }
 
