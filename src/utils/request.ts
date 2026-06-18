@@ -76,7 +76,7 @@ service.interceptors.response.use(
   },
   (error) => {
     endLoading()
-    return Promise.reject(error.response?.data || { code: 502, msg: '网络异常' })
+    return Promise.reject(error.response?.data || { code: 502, msg: 'Network error' })
   }
 )
 
