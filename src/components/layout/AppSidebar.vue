@@ -168,7 +168,7 @@ const secondaryItems = [
   { label: 'Battle', icon: 'swords', to: '/battle', badge: 'Soon' },
   { label: 'Activity', icon: 'local_activity', to: '/activity', badge: 'Soon' },
   { label: 'Shop', icon: 'store', to: '/shop', badge: 'Soon' },
-  { label: 'Market', icon: 'storefront', to: '/market', badge: 'Soon' },
+  { label: 'Market', icon: 'storefront', to: '/market' },
   { label: 'Settings', icon: 'settings', to: '/settings' }
 ]
 
